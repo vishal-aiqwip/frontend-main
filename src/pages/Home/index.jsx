@@ -2,15 +2,20 @@
  * @version 0.0.1
  * Home Page - Protected route
  */
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { useAppDispatch, useAppSelector } from '@/redux';
 import { logout } from '@/redux';
 import { persistor } from '@/redux';
 import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+  //-------------- State & Variables --------------//
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { userSession } = useAppSelector((state) => state.session);
+
+
+  
 
   const handleLogout = async () => {
     dispatch(logout());
@@ -19,6 +24,8 @@ const Home = () => {
   };
 
   return (
+    <DashboardLayout>
+
     <div className="min-h-screen bg-background p-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 flex items-center justify-between">
@@ -44,6 +51,7 @@ const Home = () => {
         </div>
       </div>
     </div>
+    </DashboardLayout>
   );
 };
 

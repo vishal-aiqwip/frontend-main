@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -113,8 +115,54 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border/90) transparent;
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+/* Utility classes */
+@utility z-* {
+  z-index: --value(--z-*);
+}
+
+@utility b {
+  border: 1px solid red;
+}
+
+/* Remove scrollbar */
+
+
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    @apply hidden size-0;
+  }
+
+  & {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Hide spin btn from input type number */
+@utility no-spin-btn {
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin: 0px;
+  }
+
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin: 0px;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+    appearance: none;
   }
 }
