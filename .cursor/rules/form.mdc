@@ -1,0 +1,420 @@
+# Form Rules
+
+## Core Principles
+- Use `react-hook-form` for all forms
+- Use `zod` for schema validation
+- Use shadcn `Form` components for UI
+- Use `@hookform/resolvers/zod` for validation integration
+
+## Form Setup
+
+### Basic Form Structure
+```javascript
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+
+//-------------------Zod validation Schema-------------------//
+const formSchema = z.object({
+  email: z.string().email({
+    message: 'Please enter a valid email address.'
+  }),
+  password: z.string().min(6, {
+    message: 'Password must be at least 6 characters.'
+  })
+});
+
+//-------------------Form Component-------------------//
+const FormComponent = () => {
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
+  });
+
+  const onSubmit = (data) => {
+    // Handle form submission
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Form fields */}
+      </form>
+    </Form>
+  );
+};
+```
+
+## Form Fields
+
+### Text Input Pattern
+```javascript
+<FormField
+  control={form.control}
+  name="email"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Email address</FormLabel>
+      <FormControl>
+        <Input
+          type="email"
+          autoComplete="email"
+          placeholder="Enter your email"
+          {...field}
+        />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+### Input with Icon
+```javascript
+<FormField
+  control={form.control}
+  name="email"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Email address</FormLabel>
+      <FormControl>
+        <div className="relative">
+          <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Input
+            type="email"
+            className="pl-10"
+            {...field}
+          />
+        </div>
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+### Password with Toggle
+```javascript
+const [showPassword, setShowPassword] = useState(false);
+
+<FormField
+  control={form.control}
+  name="password"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Password</FormLabel>
+      <FormControl>
+        <div className="relative">
+          <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            className="pr-10 pl-10"
+            {...field}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+### Select Field Pattern
+```javascript
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+<FormField
+  control={form.control}
+  name="status"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Status</FormLabel>
+      <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a status" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          <SelectItem value="pending">Pending</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+### Select with Default Value
+```javascript
+<FormField
+  control={form.control}
+  name="type"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Type</FormLabel>
+      <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <FormControl>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a type" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          <SelectItem value="option1">Option 1</SelectItem>
+          <SelectItem value="option2">Option 2</SelectItem>
+          <SelectItem value="option3">Option 3</SelectItem>
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+### Select with Dynamic Options
+```javascript
+const statusOptions = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+];
+
+<FormField
+  control={form.control}
+  name="status"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Status</FormLabel>
+      <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          {statusOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+### Select with API Data
+```javascript
+import { useQuery } from '@tanstack/react-query';
+
+const { data: options = [] } = useQuery({
+  queryKey: ['select-options'],
+  queryFn: () => API.GetOptions(),
+});
+
+<FormField
+  control={form.control}
+  name="category"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Category</FormLabel>
+      <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.id} value={option.id.toString()}>
+              {option.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+```
+
+## Zod Validation
+
+### Common Validation Patterns
+```javascript
+const schema = z.object({
+  // Required string
+  name: z.string().min(1, { message: 'Name is required' }),
+  
+  // Email
+  email: z.string().email({ message: 'Invalid email address' }),
+  
+  // Password
+  password: z.string()
+    .min(6, { message: 'Password must be at least 6 characters' })
+    .regex(/[A-Z]/, { message: 'Must contain uppercase letter' }),
+  
+  // Number
+  age: z.number().min(18, { message: 'Must be 18 or older' }),
+  
+  // Optional
+  description: z.string().optional(),
+  
+  // Select/Enum
+  status: z.string().min(1, { message: 'Status is required' }),
+  type: z.enum(['type1', 'type2', 'type3'], {
+    required_error: 'Please select a type',
+  }),
+  
+  // Custom validation
+  confirmPassword: z.string()
+    .refine((val) => val === form.getValues('password'), {
+      message: 'Passwords do not match'
+    })
+});
+```
+
+## Form Submission
+
+### With TanStack Query Mutation
+```javascript
+import { useMutation } from '@tanstack/react-query';
+import { useErrorLog } from '@/hooks';
+
+const handleError = useErrorLog('pages/ComponentName');
+
+const mutation = useMutation({
+  mutationFn: (data) => API.SubmitForm(data, 'Success!', 'Submitting...'),
+  onSuccess: (response) => {
+    // Handle success
+    form.reset();
+  },
+  onError: (error) => {
+    handleError(error);
+    form.setError('root', {
+      message: 'An error occurred. Please try again.'
+    });
+  }
+});
+
+const onSubmit = (data) => {
+  mutation.mutate(data);
+};
+```
+
+### Submit Button
+```javascript
+<Button 
+  type="submit" 
+  className="w-full" 
+  disabled={form.formState.isSubmitting || mutation.isPending}
+>
+  {form.formState.isSubmitting || mutation.isPending ? 'Submitting...' : 'Submit'}
+</Button>
+```
+
+## Root Error Display
+
+### Display Root Errors
+```javascript
+{form.formState.errors.root && (
+  <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+    {form.formState.errors.root.message}
+  </div>
+)}
+```
+
+### Set Root Error
+```javascript
+form.setError('root', {
+  message: 'Invalid credentials'
+});
+```
+
+## Form State
+
+### Accessing Form State
+```javascript
+// Form state
+form.formState.isSubmitting  // During submission
+form.formState.isValid       // Form validity
+form.formState.errors        // All errors
+form.formState.dirtyFields   // Changed fields
+```
+
+### Reset Form
+```javascript
+form.reset(); // Reset to default values
+form.reset({ email: '', password: '' }); // Reset with new defaults
+```
+
+## Form Layout
+
+### Standard Form Layout
+```javascript
+<div className="bg-background flex min-h-screen items-center justify-center p-4">
+  <div className="bg-card w-full max-w-md space-y-8 rounded-lg border p-8 shadow-lg">
+    <div className="text-center">
+      <h1 className="text-3xl font-bold tracking-tight">Form Title</h1>
+      <p className="text-muted-foreground mt-2 text-sm">Form description</p>
+    </div>
+
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Form fields */}
+      </form>
+    </Form>
+  </div>
+</div>
+```
+
+## Best Practices
+
+### DO
+- Always use zod schemas for validation
+- Use FormField, FormItem, FormLabel, FormControl, FormMessage pattern
+- Handle loading states during submission
+- Show user-friendly error messages
+- Reset form on successful submission
+- Use Select component for dropdown fields
+- Handle dynamic options with map function
+- Use API data with TanStack Query for select options
+
+### DON'T
+- Don't use uncontrolled inputs
+- Don't skip validation
+- Don't expose technical error details
+- Don't forget to handle loading states
+- Don't use native HTML5 validation (use zod instead)
+- Don't forget to wrap Select in FormControl
+- Don't use defaultValue without onValueChange in Select

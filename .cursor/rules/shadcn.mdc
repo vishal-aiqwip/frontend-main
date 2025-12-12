@@ -1,0 +1,244 @@
+# shadcn/ui Rules
+
+## Core Principles
+- Use shadcn/ui components from `@/components/ui`
+- Follow shadcn component patterns and API
+- Extend components when needed, maintain compatibility
+- Use Tailwind CSS for styling (no inline styles)
+
+## Component Import
+
+### Standard Import Pattern
+```javascript
+// Single component
+import { Button } from '@/components/ui/button';
+
+// Multiple components
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Form components
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
+```
+
+## Component Usage
+
+### Button
+```javascript
+import { Button } from '@/components/ui/button';
+
+<Button variant="default" size="default">
+  Click me
+</Button>
+
+// Variants: default, destructive, outline, secondary, ghost, link
+// Sizes: default, sm, lg, icon, icon-sm, icon-lg
+```
+
+### Card
+```javascript
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Content
+  </CardContent>
+</Card>
+```
+
+### Form Components
+```javascript
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage
+} from '@/components/ui/form';
+
+<Form {...form}>
+  <FormField
+    control={form.control}
+    name="fieldName"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Label</FormLabel>
+        <FormControl>
+          <Input {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+</Form>
+```
+
+## Styling
+
+### Tailwind CSS Only
+- Use Tailwind utility classes
+- Use `cn()` utility for className merging
+- Use theme variables: `bg-background`, `text-foreground`
+- Support dark mode: `dark:bg-background`
+
+### Common Patterns
+```javascript
+// Container
+className="bg-background min-h-screen p-4"
+
+// Card
+className="rounded-lg border bg-card p-6 shadow-sm"
+
+// Text
+className="text-3xl font-bold tracking-tight"
+className="text-muted-foreground text-sm"
+
+// Spacing
+className="space-y-4" // Vertical
+className="gap-4" // Flex/Grid
+```
+
+## Component Extension
+
+### Modifying Components
+- Edit components in `src/components/ui/[component].jsx`
+- Maintain shadcn API compatibility
+- Use `cn()` for className merging
+- Follow shadcn component structure
+
+### Example Extension
+```javascript
+// src/components/ui/button.jsx
+import { cn } from '@/lib/utils';
+import { buttonVariants } from './button';
+
+function Button({ className, variant, size, ...props }) {
+  return (
+    <button
+      className={cn(buttonVariants({ variant, size }), className)}
+      {...props}
+    />
+  );
+}
+```
+
+## Theme Integration
+
+### CSS Variables
+- Use CSS variables for theming
+- Variables defined in `src/styles/index.css`
+- Support light/dark mode via `next-themes`
+
+### Theme Variables
+```css
+--background
+--foreground
+--primary
+--primary-foreground
+--secondary
+--muted
+--muted-foreground
+--destructive
+--border
+--radius
+```
+
+### Usage
+```javascript
+className="bg-background text-foreground"
+className="bg-primary text-primary-foreground"
+className="text-muted-foreground"
+```
+
+## Component Composition
+
+### Composing Components
+```javascript
+// Combine shadcn components
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <Form>
+      {/* Form fields */}
+    </Form>
+  </CardContent>
+</Card>
+```
+
+## Icons
+
+### Icon Library
+- Use `lucide-react` for icons (configured in components.json)
+- Import from `lucide-react`
+
+```javascript
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+
+<Mail className="h-4 w-4" />
+```
+
+### Icon Sizing
+- Use Tailwind size classes: `h-4 w-4`, `h-5 w-5`
+- Or use `size-4`, `size-5` (if available)
+
+## Best Practices
+
+### DO
+- Use shadcn components as building blocks
+- Follow shadcn component patterns
+- Use Tailwind for all styling
+- Support dark mode
+- Use theme variables
+
+### DON'T
+- Don't use inline styles
+- Don't modify shadcn components unnecessarily
+- Don't break component API
+- Don't mix styling approaches
+
+## Adding New Components
+
+### Using shadcn CLI
+```bash
+npx shadcn@latest add [component-name]
+```
+
+### Manual Addition
+- Copy component from shadcn docs
+- Place in `src/components/ui/[component].jsx`
+- Follow existing component patterns
+- Update exports if needed
+
+## Component Configuration
+
+### components.json
+```json
+{
+  "style": "new-york",
+  "rsc": false,
+  "tsx": false,
+  "tailwind": {
+    "css": "src/styles/index.css",
+    "baseColor": "zinc",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui"
+  }
+}
+```

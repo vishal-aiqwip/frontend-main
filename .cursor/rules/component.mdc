@@ -1,0 +1,167 @@
+# Component Rules
+
+## Component Structure
+
+### Standard Component Template
+```javascript
+/**
+ * @version 0.0.1
+ * Updated On : [Date]
+ * Component description
+ */
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+
+const ComponentName = ({ prop1, prop2 = defaultValue }) => {
+  //-------------- State & Variables --------------//
+  const [state, setState] = useState();
+  
+  //-------------- Hooks --------------//
+  // Custom hooks, Redux hooks, etc.
+  
+  //-------------- Effects --------------//
+  // useEffect, etc.
+  
+  //-------------- Event Handlers --------------//
+  const handleAction = () => {
+    // Handler logic
+  };
+  
+  //-------------- Render --------------//
+  return (
+    <div className="...">
+      {/* Component JSX */}
+    </div>
+  );
+};
+
+export default ComponentName;
+```
+
+## shadcn/ui Components
+
+### Import Pattern
+```javascript
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+```
+
+### Component Usage
+- Always use shadcn/ui components from `@/components/ui`
+- Use proper variants and sizes: `<Button variant="outline" size="sm">`
+- Follow shadcn component patterns and props
+
+### Extending Components
+- If modifying shadcn components, do so in `src/components/ui/[component].jsx`
+- Maintain backward compatibility with shadcn updates
+- Use `cn()` utility for className merging
+
+## Tailwind CSS
+
+### Class Organization
+- Use Tailwind utility classes exclusively
+- Group related classes: `flex items-center justify-between`
+- Use responsive prefixes: `md:`, `lg:`, `xl:`
+- Use dark mode: `dark:bg-background`
+
+### Common Patterns
+```javascript
+// Container
+className="bg-background min-h-screen p-4"
+
+// Card
+className="rounded-lg border bg-card p-6 shadow-sm"
+
+// Flex layouts
+className="flex items-center justify-between gap-4"
+
+// Text
+className="text-3xl font-bold tracking-tight"
+className="text-muted-foreground text-sm"
+
+// Spacing
+className="space-y-4" // Vertical spacing
+className="gap-4" // Flex/Grid gap
+```
+
+### Theme Variables
+- Use CSS variables for theming: `bg-background`, `text-foreground`
+- Use semantic colors: `text-muted-foreground`, `bg-destructive`
+- Support dark mode with `dark:` prefix
+
+## Component Organization
+
+### File Structure
+```
+src/components/
+  ComponentName/
+    index.jsx          # Main component
+    components/        # Sub-components (if needed)
+    hooks/             # Component-specific hooks (if needed)
+```
+
+### Component Exports
+- Export default for main component
+- Use named exports for sub-components if needed
+- Export from `src/components/index.js` for easy imports
+
+### Props Interface
+- Use descriptive prop names
+- Provide default values where appropriate
+- Document props with JSDoc for complex components
+- Use PropTypes or TypeScript if available
+
+## Reusable Components
+
+### Creating Reusable Components
+```javascript
+/**
+ * Reusable component description
+ * @param {Array} items - Array of items to display
+ * @param {Function} onSelect - Callback when item is selected
+ * @param {boolean} disabled - Whether component is disabled
+ */
+export const ReusableComponent = ({ 
+  items = [], 
+  onSelect, 
+  disabled = false 
+}) => {
+  // Implementation
+};
+```
+
+### Component Composition
+- Prefer composition over configuration
+- Use children prop for flexible layouts
+- Create wrapper components for common patterns
+
+## Performance
+
+### Optimization
+- Use `React.memo()` for expensive components
+- Memoize callbacks with `useCallback()`
+- Memoize computed values with `useMemo()`
+- Lazy load heavy components
+
+### Best Practices
+- Keep components small and focused
+- Extract logic into custom hooks
+- Avoid inline object/array creation in render
+- Use proper keys for lists
+
+## Accessibility
+
+### ARIA Attributes
+- Use semantic HTML elements
+- Add `aria-label` for icon-only buttons
+- Use `sr-only` class for screen reader text
+- Ensure keyboard navigation works
+
+### Examples
+```javascript
+<Button aria-label="Close dialog">
+  <X className="h-4 w-4" />
+  <span className="sr-only">Close</span>
+</Button>
+```

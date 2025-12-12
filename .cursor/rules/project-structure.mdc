@@ -1,0 +1,227 @@
+# Project Structure Rules
+
+## Directory Organization
+
+### Root Structure
+```
+frontend-main/
+├── .cursor/              # Cursor rules
+├── public/               # Static assets
+├── src/
+│   ├── assets/          # Images, icons, etc.
+│   ├── components/      # Reusable components
+│   ├── config/          # Configuration files
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utility functions
+│   ├── navigation/      # Routing configuration
+│   ├── pages/           # Page components
+│   ├── redux/           # Redux store and slices
+│   ├── services/        # API services
+│   └── styles/          # Global styles
+├── components.json      # shadcn/ui config
+├── package.json
+└── vite.config.js
+```
+
+## Source Directory Structure
+
+### Components (`src/components/`)
+```
+components/
+├── ui/                  # shadcn/ui components
+├── Layout/             # Layout components
+├── ErrorBoundary/      # Error boundary component
+├── Loader/             # Loading components
+├── multi-select.jsx    # Multi-select component
+└── index.js           # Component exports
+```
+
+### Pages (`src/pages/`)
+```
+pages/
+├── Home/
+│   └── index.jsx
+├── Login/
+│   ├── index.jsx
+│   └── components/     # Page-specific components
+└── NotFound/
+    └── index.jsx
+```
+
+### Redux (`src/redux/`)
+```
+redux/
+├── actions/           # Action creators
+│   └── sessionActions.js
+├── reducer/           # Redux slices
+│   ├── index.js
+│   └── sessionReducer.js
+├── store/             # Store configuration
+│   └── index.ts
+├── hooks.js          # Typed Redux hooks
+└── index.js          # Redux exports
+```
+
+### Services (`src/services/`)
+```
+services/
+├── apis/              # API modules
+│   ├── auth.js
+│   └── user-management/
+│       └── index.js
+├── core.js           # Axios setup, interceptors
+└── index.js          # Service exports
+```
+
+### Hooks (`src/hooks/`)
+```
+hooks/
+├── use-mobile.js
+├── useTheme.jsx
+├── useErrorLog/
+│   └── index.jsx
+└── index.js          # Hook exports
+```
+
+## File Naming Conventions
+
+### Components
+- Use PascalCase: `ComponentName.jsx`
+- Main component file: `index.jsx` (in component folder)
+- Sub-components: `component-name.jsx`
+
+### Utilities
+- Use camelCase: `utilityName.js`
+- Constants: `CONSTANT_NAME.js` or in config
+
+### Pages
+- Use PascalCase folder: `PageName/`
+- Main file: `index.jsx`
+
+## Import Path Aliases
+
+### Configured Aliases
+```javascript
+// From jsconfig.json / vite.config.js
+'@/components'  → src/components
+'@/lib'         → src/lib
+'@/hooks'        → src/hooks
+'@/redux'        → src/redux
+'@/services'     → src/services
+'@/config'       → src/config
+'@/pages'        → src/pages
+```
+
+### Import Examples
+```javascript
+// Components
+import { Button } from '@/components/ui/button';
+import { Loader } from '@/components';
+
+// Utilities
+import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+
+// Hooks
+import { useErrorLog } from '@/hooks';
+
+// Redux
+import { useAppSelector, useAppDispatch } from '@/redux';
+
+// Services
+import { API } from '@/services';
+
+// Config
+import { CONFIG } from '@/config';
+```
+
+## Component Organization
+
+### Component Folder Structure
+```
+ComponentName/
+├── index.jsx          # Main component (default export)
+├── components/        # Sub-components (if needed)
+│   └── SubComponent.jsx
+└── hooks/            # Component-specific hooks (if needed)
+    └── useComponentHook.js
+```
+
+### Export Pattern
+```javascript
+// Component file
+export default ComponentName;
+
+// Index file (src/components/index.js)
+export { default as ComponentName } from './ComponentName';
+export { default as Loader } from './Loader';
+```
+
+## File Organization Rules
+
+### DO
+- Group related files in folders
+- Use `index.jsx` for main component files
+- Export from index files for clean imports
+- Keep components small and focused
+- Separate concerns (UI, logic, data)
+
+### DON'T
+- Don't create deep nesting (max 3-4 levels)
+- Don't mix concerns in single files
+- Don't use absolute paths without aliases
+- Don't create circular dependencies
+
+## Code Organization
+
+### Component File Structure
+```javascript
+/**
+ * @version 0.0.1
+ * Updated On : [Date]
+ * Component description
+ */
+
+// 1. External imports
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+
+// 2. Internal imports
+import { useAppSelector } from '@/redux';
+
+// 3. Constants/Schemas
+const CONSTANT = 'value';
+
+// 4. Component
+const Component = () => {
+  // State
+  // Hooks
+  // Effects
+  // Handlers
+  // Render
+};
+
+// 5. Export
+export default Component;
+```
+
+## Best Practices
+
+### Separation of Concerns
+- **Components**: UI and presentation logic
+- **Hooks**: Reusable logic
+- **Services**: API calls and data fetching
+- **Redux**: Global state management
+- **Utils**: Pure utility functions
+
+### File Size
+- Keep components under 300 lines
+- Split large components into smaller ones
+- Extract logic into custom hooks
+- Move constants to separate files
+
+### Reusability
+- Create reusable components in `components/`
+- Create page-specific components in `pages/PageName/components/`
+- Share utilities through `lib/`
+- Share hooks through `hooks/`

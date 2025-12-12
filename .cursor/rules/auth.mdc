@@ -1,0 +1,403 @@
+# Authentication Rules
+
+## Core Principles
+- Authentication state is managed in Redux (`session` slice)
+- Tokens are persisted using redux-persist
+- Protected routes use `ProtectedRoute` component
+- Public routes use `PublicRoute` component
+
+## Redux Session State
+
+### Session Slice Structure
+```javascript
+// State shape
+{
+  userSession: {
+    token: {
+      access_token: string,
+      refresh_token: string
+    },
+    // ... other user data
+  },
+  isLoading: boolean | string
+}
+```
+
+### Accessing Session
+```javascript
+import { useAppSelector } from '@/redux';
+
+const { userSession, isLoading } = useAppSelector((state) => state.session);
+```
+
+### Session Actions
+```javascript
+import { useAppDispatch } from '@/redux';
+import { login, logout, loadingStart, loadingStop } from '@/redux';
+
+// Login
+dispatch(login(response.data));
+
+// Logout
+dispatch(logout());
+// Also clear persist: localStorage.removeItem('persist:root');
+// Or use: persistor.purge();
+
+// Loading states
+dispatch(loadingStart('screen')); // or 'button', etc.
+dispatch(loadingStop());
+```
+
+## Token Management
+
+### Token Access
+- Tokens are automatically attached to requests via `axiosApi` interceptor
+- Access token is retrieved from redux-persist storage
+- Refresh token logic is handled in `core.js` interceptors
+
+### Token Refresh
+- Automatic token refresh on 401/403 responses
+- Refresh endpoint: `/auth/refresh-token`
+- Failed refresh redirects to `/login` and clears storage
+
+### Manual Token Update
+```javascript
+import { updateAccessToken } from '@/redux';
+
+dispatch(updateAccessToken(newAccessToken));
+```
+
+## Route Protection
+
+### Protected Routes
+```javascript
+// In navigation/index.jsx
+{
+  element: <ProtectedRoute />,
+  children: [
+    { path: '/dashboard', element: <Dashboard /> },
+  ]
+}
+```
+
+### Public Routes
+```javascript
+{
+  element: <PublicRoute />,
+  children: [
+    { path: '/login', element: <Login /> },
+  ]
+}
+```
+
+### Route Components
+- `ProtectedRoute`: Checks `userSession`, redirects to `/login` if not authenticated
+- `PublicRoute`: Allows access without authentication
+- `AdminRoute`: For admin-only routes (if implemented)
+
+## Login Flow
+
+### Login Component Pattern
+```javascript
+import { useMutation } from '@tanstack/react-query';
+import { useAppDispatch } from '@/redux';
+import { login } from '@/redux';
+import { API } from '@/services';
+import { useNavigate } from 'react-router-dom';
+
+const loginMutation = useMutation({
+  mutationFn: (data) => API.Login(data, 'Login successful!', 'Logging in...'),
+  onSuccess: (response) => {
+    dispatch(login(response.data));
+    navigate('/dashboard', { replace: true });
+  },
+  onError: (error) => {
+    // Handle error
+  }
+});
+```
+
+## Logout Flow
+
+### Logout Implementation
+```javascript
+import { useAppDispatch } from '@/redux';
+import { logout } from '@/redux';
+import { persistor } from '@/redux';
+import { useNavigate } from 'react-router-dom';
+
+const handleLogout = () => {
+  dispatch(logout());
+  persistor.purge(); // Clear persisted state
+  navigate('/login', { replace: true });
+};
+```
+
+## Session Persistence
+- Session is persisted to localStorage via redux-persist
+- Only `session` slice is persisted (configured in store)
+- Persist key: `persist:root`
+- Session persists across page refreshes
+
+## Core.js - Axios Configuration
+
+### Axios Instances
+```javascript
+// In src/services/core.js
+import { axiosApi, publicAxios } from '@/services/core';
+
+// Authenticated requests - automatically includes Bearer token
+axiosApi.post('/endpoint', data);
+
+// Public requests - no token attached
+publicAxios.post('/auth/login', data);
+```
+
+### Request Interceptor
+- `axiosApi` automatically attaches `Authorization: Bearer {token}` header
+- Token is retrieved from redux-persist storage via `getAccessToken()`
+- Runs on every request made with `axiosApi`
+
+### Response Interceptor - Token Refresh
+- Automatically handles 401/403 responses
+- Implements token refresh queue for concurrent requests
+- Prevents multiple refresh attempts simultaneously
+
+### Token Refresh Flow
+```javascript
+// Automatic flow in core.js:
+1. Request fails with 401/403
+2. Check if refresh token exists
+3. If no refresh token → Clear storage & redirect to /login
+4. If refresh token exists:
+   - Queue concurrent requests
+   - Call /auth/refresh-token endpoint
+   - Update access token in storage
+   - Retry original request with new token
+   - Process queued requests
+5. If refresh fails → Clear storage & redirect to /login
+```
+
+### Token Refresh Implementation
+```javascript
+// In src/services/core.js
+
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else if (token) prom.resolve(token);
+  });
+  failedQueue = [];
+};
+
+axiosApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const status = error.response?.status;
+
+    // Step 1: Check if request failed with 401/403
+    if ((status === 401 || status === 403) && originalRequest && !originalRequest._retry) {
+      const refreshToken = getRefreshToken();
+
+      // Step 2 & 3: If no refresh token, log out & redirect
+      if (!refreshToken) {
+        localStorage.removeItem('persist:root');
+        toast.error('Session expired. Please log in again.');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      // Step 4: Handle concurrent refresh attempts
+      if (isRefreshing) {
+        // Queue the request to retry after token refresh
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = 'Bearer ' + token;
+            return axiosApi(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Step 4: Attempt refresh
+        const res = await publicAxios.post('/auth/refresh-token', {
+          refresh_token: refreshToken
+        });
+
+        const newAccessToken =
+          res?.data?.token?.access_token || 
+          res?.data?.access || 
+          res?.data?.access_token;
+
+        if (!newAccessToken) throw new Error('Failed to refresh token');
+
+        // Update access token in storage
+        setAccessToken(newAccessToken);
+        
+        // Process queued requests
+        processQueue(null, newAccessToken);
+
+        // Retry original request with new token
+        originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
+        return axiosApi(originalRequest);
+      } catch (err) {
+        // Step 5: If refresh fails, clear storage & redirect
+        processQueue(err, null);
+
+        const errStatus = err?.response?.status;
+        if (errStatus === 401 || errStatus === 403) {
+          toast.error('Session expired. Please log in again.');
+          localStorage.removeItem('persist:root');
+          window.location.href = '/login';
+        }
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+### Token Helper Functions
+```javascript
+import { getAccessToken, getRefreshToken, setAccessToken } from '@/services/core';
+
+// Get access token from storage
+const token = getAccessToken();
+
+// Get refresh token from storage
+const refreshToken = getRefreshToken();
+
+// Update access token (used internally by refresh logic)
+setAccessToken(newAccessToken);
+```
+
+### Token Storage Structure
+- Tokens are stored in redux-persist: `localStorage.getItem('persist:root')`
+- Path: `session.userSession.token.access_token` or `session.userSession.token.refresh_token`
+- Fallback paths: `session.userSession.access_token`, `session.userSession.access`
+
+### Ngrok Header Support
+- Automatically adds `ngrok-skip-browser-warning: True` header
+- Applied when URL contains `ngrok-free.app`
+- Works for both `axiosApi` and `publicAxios`
+
+### Response Handler
+```javascript
+import { responseHandler } from '@/services/core';
+
+// Unified response handler with toast notifications
+const response = await responseHandler(
+  api_call,
+  'Success message',  // Optional: toast success message
+  'Loading message'   // Optional: toast loading message
+);
+
+// Returns response.data on success (200/201)
+// Returns null on error
+// Automatically shows error toasts
+```
+
+## Auth.js - Authentication APIs
+
+### API Functions
+```javascript
+import { API } from '@/services';
+
+// Login
+const response = await API.Login(
+  { email, password },
+  'Login successful!',  // Optional: success toast
+  'Logging in...'       // Optional: loading toast
+);
+
+// SignUp
+const response = await API.SignUp(
+  { email, password, name },
+  'Account created!',
+  'Creating account...'
+);
+
+// Refresh Token (usually handled automatically)
+const response = await API.RefreshToken(
+  { refresh_token: token },
+  false,  // No success toast
+  false   // No loading toast
+);
+```
+
+### API Function Signature
+```javascript
+// All auth API functions follow this pattern:
+API.FunctionName(
+  data,              // Request payload
+  toast_success,     // Optional: success message (default: false)
+  toast_loading      // Optional: loading message (default: false)
+)
+
+// Returns: response.data on success, null on error
+```
+
+### Using Auth APIs
+```javascript
+// With TanStack Query Mutation
+const loginMutation = useMutation({
+  mutationFn: (data) => API.Login(data, 'Login successful!', 'Logging in...'),
+  onSuccess: (response) => {
+    // response contains the data from API
+    dispatch(login(response.data));
+  },
+  onError: (error) => {
+    // Error handling
+  }
+});
+
+// Direct call (not recommended, use mutations)
+const response = await API.Login({ email, password });
+if (response) {
+  // Handle success
+}
+```
+
+### API Endpoints
+- Login: `POST /api/auth/login`
+- SignUp: `POST /api/auth/signup`
+- Refresh Token: `POST /api/auth/refresh-token`
+
+### Response Format
+```javascript
+// Success response structure
+{
+  data: {
+    token: {
+      access_token: string,
+      refresh_token: string
+    },
+    user: {
+      // User data
+    }
+  }
+}
+
+// Error response
+// Returns null, error shown via toast notification
+```
+
+## Security Best Practices
+- Never store sensitive data in component state
+- Always use `axiosApi` for authenticated requests
+- Clear tokens on logout
+- Handle token expiration gracefully
+- Redirect to login on authentication errors
+  

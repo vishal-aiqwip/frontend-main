@@ -1,0 +1,394 @@
+# Dialog/Modal Rules
+
+## Core Principles
+- Use shadcn/ui `Dialog` for standard modals
+- Use `Drawer` for slide-out panels (responsive: bottom on mobile, side on desktop)
+- Use `AlertDialog` for confirmation dialogs
+- Control dialog state with `open` and `onOpenChange` props
+
+## Dialog Component
+
+### Basic Dialog Structure
+```javascript
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+const Component = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>Open Dialog</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Dialog Title</DialogTitle>
+          <DialogDescription>
+            Dialog description text
+          </DialogDescription>
+        </DialogHeader>
+        <div>
+          {/* Dialog content */}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit}>Submit</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+```
+
+### Dialog with Form
+```javascript
+import { useForm } from 'react-hook-form';
+import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+
+const Component = () => {
+  const [open, setOpen] = useState(false);
+  const form = useForm();
+
+  const onSubmit = (data) => {
+    // Handle form submission
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>Add Item</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add New Item</DialogTitle>
+          <DialogDescription>
+            Fill in the details below
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+```
+
+## Drawer Component
+
+### Responsive Drawer (Mobile/Desktop)
+```javascript
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
+
+const Component = ({ item }) => {
+  const isMobile = useIsMobile();
+
+  return (
+    <Drawer direction={isMobile ? "bottom" : "right"}>
+      <DrawerTrigger asChild>
+        <Button variant="link">View Details</Button>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader className="gap-1">
+          <DrawerTitle>{item.title}</DrawerTitle>
+          <DrawerDescription>
+            Item description
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+          {/* Drawer content */}
+        </div>
+        <DrawerFooter>
+          <Button>Submit</Button>
+          <DrawerClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+```
+
+### Drawer Directions
+```javascript
+// Bottom drawer (mobile)
+<Drawer direction="bottom">
+
+// Top drawer
+<Drawer direction="top">
+
+// Right drawer (desktop)
+<Drawer direction="right">
+
+// Left drawer
+<Drawer direction="left">
+```
+
+## AlertDialog Component
+
+### Confirmation Dialog
+```javascript
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+
+const Component = () => {
+  const handleDelete = () => {
+    // Delete action
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive">Delete</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the item.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete}>
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
+```
+
+## Controlled Dialog State
+
+### Programmatic Control
+```javascript
+const [open, setOpen] = useState(false);
+
+// Open dialog
+const handleOpen = () => {
+  setOpen(true);
+};
+
+// Close dialog
+const handleClose = () => {
+  setOpen(false);
+};
+
+// Close after action
+const handleSubmit = async () => {
+  await API.Submit();
+  setOpen(false);
+};
+
+<Dialog open={open} onOpenChange={setOpen}>
+  {/* Content */}
+</Dialog>
+```
+
+## Dialog Patterns
+
+### Dialog with Loading State
+```javascript
+const [open, setOpen] = useState(false);
+const [isSubmitting, setIsSubmitting] = useState(false);
+
+const handleSubmit = async () => {
+  setIsSubmitting(true);
+  try {
+    await API.Submit();
+    setOpen(false);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+<Dialog open={open} onOpenChange={setOpen}>
+  <DialogContent>
+    {/* Content */}
+    <DialogFooter>
+      <Button
+        variant="outline"
+        onClick={() => setOpen(false)}
+        disabled={isSubmitting}
+      >
+        Cancel
+      </Button>
+      <Button onClick={handleSubmit} disabled={isSubmitting}>
+        {isSubmitting ? 'Submitting...' : 'Submit'}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+### Dialog with Data Fetching
+```javascript
+import { useQuery } from '@tanstack/react-query';
+
+const Component = ({ itemId, open, onOpenChange }) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ['item', itemId],
+    queryFn: () => API.GetItem(itemId),
+    enabled: open && !!itemId, // Only fetch when dialog is open
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        {isLoading ? (
+          <Loader />
+        ) : (
+          <DialogHeader>
+            <DialogTitle>{data?.title}</DialogTitle>
+            {/* Content */}
+          </DialogHeader>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+```
+
+## Best Practices
+
+### DO
+- Use `Dialog` for standard modals
+- Use `Drawer` for slide-out panels (especially on mobile)
+- Use `AlertDialog` for confirmations
+- Control dialog state explicitly with `open` and `onOpenChange`
+- Use `asChild` prop with `DialogTrigger` and `DrawerTrigger`
+- Make drawers responsive (bottom on mobile, side on desktop)
+- Handle loading states in dialogs
+- Close dialogs after successful actions
+
+### DON'T
+- Don't use uncontrolled dialogs (always use `open` state)
+- Don't forget to handle form submission in dialogs
+- Don't use dialogs for simple tooltips (use Tooltip instead)
+- Don't nest dialogs
+- Don't forget to reset form state when closing dialog
+
+## Accessibility
+
+### ARIA Attributes
+- Dialogs automatically handle focus management
+- Use `DialogTitle` and `DialogDescription` for proper labeling
+- Use `DialogClose` or `AlertDialogCancel` for cancel actions
+- Ensure keyboard navigation works (ESC to close)
+
+### Screen Reader Support
+```javascript
+<Dialog>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Accessible Title</DialogTitle>
+      <DialogDescription>
+        Screen reader will announce this description
+      </DialogDescription>
+    </DialogHeader>
+  </DialogContent>
+</Dialog>
+```
+
+## Dialog Sizing
+
+### Custom Sizes
+```javascript
+// Small dialog
+<DialogContent className="sm:max-w-sm">
+  {/* Content */}
+</DialogContent>
+
+// Large dialog
+<DialogContent className="sm:max-w-2xl">
+  {/* Content */}
+</DialogContent>
+
+// Full width on mobile
+<DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
+  {/* Content */}
+</DialogContent>
+```
+
+## Dialog Footer Patterns
+
+### Standard Footer
+```javascript
+<DialogFooter>
+  <Button variant="outline" onClick={() => setOpen(false)}>
+    Cancel
+  </Button>
+  <Button onClick={handleSubmit}>Submit</Button>
+</DialogFooter>
+```
+
+### Footer with Multiple Actions
+```javascript
+<DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between">
+  <Button variant="destructive" onClick={handleDelete}>
+    Delete
+  </Button>
+  <div className="flex gap-2">
+    <Button variant="outline" onClick={() => setOpen(false)}>
+      Cancel
+    </Button>
+    <Button onClick={handleSave}>Save</Button>
+  </div>
+</DialogFooter>
+```
+

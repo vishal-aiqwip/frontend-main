@@ -1,0 +1,220 @@
+# Redux Persist Rules
+
+## Core Principles
+- Use `redux-persist` to persist Redux state
+- Only persist necessary state (whitelist)
+- Configure persist in store setup
+- Use `PersistGate` to handle rehydration
+
+## Store Configuration
+
+### Persist Setup
+```javascript
+// src/redux/store/index.ts
+import { configureStore } from '@reduxjs/toolkit';
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
+import rootReducer from '../reducer';
+
+const persistConfig = {
+  key: 'root',
+  version: 1,
+  storage,
+  whitelist: ['session'], // Only persist session slice
+};
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+export const store = configureStore({
+  reducer: persistedReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
+});
+
+export const persistor = persistStore(store);
+```
+
+## PersistGate
+
+### App Setup
+```javascript
+// src/App.jsx
+import { PersistGate } from 'redux-persist/integration/react';
+import { persistor, store } from './redux';
+import { Loader } from './components';
+
+function App() {
+  return (
+    <Provider store={store}>
+      <PersistGate loading={<Loader />} persistor={persistor}>
+        {/* App content */}
+      </PersistGate>
+    </Provider>
+  );
+}
+```
+
+## Persist Configuration
+
+### Whitelist vs Blacklist
+```javascript
+// Whitelist: Only persist these slices
+whitelist: ['session']
+
+// Blacklist: Persist all except these
+blacklist: ['ui', 'temporary']
+```
+
+### Storage Options
+```javascript
+// localStorage (default)
+import storage from 'redux-persist/lib/storage';
+
+// sessionStorage
+import storageSession from 'redux-persist/lib/storage/session';
+
+const persistConfig = {
+  storage: storageSession, // Use sessionStorage
+};
+```
+
+## What to Persist
+
+### DO Persist
+- User session/authentication data
+- User preferences
+- Settings that should survive refresh
+
+### DON'T Persist
+- Loading states
+- Temporary UI state
+- Form data (usually)
+- API response cache (use TanStack Query instead)
+
+## Accessing Persisted State
+
+### In Components
+```javascript
+// Normal Redux access - persist is transparent
+const { userSession } = useAppSelector((state) => state.session);
+```
+
+### In Services (core.js)
+```javascript
+// Access persisted state from localStorage
+const getPersistedSession = () => {
+  try {
+    const persistedState = localStorage.getItem('persist:root');
+    if (!persistedState) return null;
+    
+    const parsed = JSON.parse(persistedState);
+    const session = JSON.parse(parsed.session || '{}');
+    return session.userSession || null;
+  } catch {
+    return null;
+  }
+};
+```
+
+## Clearing Persisted State
+
+### Logout
+```javascript
+import { persistor } from '@/redux';
+import { logout } from '@/redux';
+
+const handleLogout = () => {
+  dispatch(logout());
+  persistor.purge(); // Clear all persisted state
+  // Or
+  localStorage.removeItem('persist:root');
+};
+```
+
+### Selective Clearing
+```javascript
+// Clear specific slice (requires custom implementation)
+// Or use blacklist in persistConfig
+```
+
+## Persist Key
+
+### Changing Persist Key
+```javascript
+const persistConfig = {
+  key: 'myApp', // Change from 'root' to 'myApp'
+  // ...
+};
+```
+
+### Multiple Persist Configs
+```javascript
+// Different persist configs for different slices
+const sessionPersistConfig = {
+  key: 'session',
+  storage,
+  whitelist: ['userSession'],
+};
+```
+
+## Version Management
+
+### Migrating State
+```javascript
+const persistConfig = {
+  key: 'root',
+  version: 2, // Increment on schema changes
+  migrate: (state) => {
+    // Migrate from version 1 to 2
+    return {
+      ...state,
+      session: {
+        ...state.session,
+        // Add new fields or transform
+      }
+    };
+  },
+};
+```
+
+## Best Practices
+
+### DO
+- Only persist essential state
+- Use whitelist to be explicit
+- Handle rehydration loading state
+- Clear persisted state on logout
+- Version your persist config
+
+### DON'T
+- Don't persist sensitive data (tokens are OK, passwords are NOT)
+- Don't persist large objects
+- Don't persist frequently changing state
+- Don't forget to handle migration
+
+## Debugging
+
+### Inspect Persisted State
+```javascript
+// In browser console
+const state = JSON.parse(localStorage.getItem('persist:root'));
+console.log(state);
+```
+
+### Common Issues
+- State not persisting: Check whitelist
+- State not clearing: Use `persistor.purge()`
+- Rehydration errors: Check state shape compatibility

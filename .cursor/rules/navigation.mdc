@@ -1,0 +1,218 @@
+# Navigation Rules
+
+## Core Principles
+- Use React Router v7 (`react-router-dom`)
+- Implement lazy loading for all pages
+- Use route protection with `ProtectedRoute` and `PublicRoute`
+- Wrap router in `Suspense` with `Loader` fallback
+
+## Router Setup
+
+### Navigation Structure
+```javascript
+// src/navigation/index.jsx
+import { Suspense, lazy } from 'react';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { Loader } from '@/components';
+import ProtectedRoute from './ProtectedRoute';
+import PublicRoute from './PublicRoute';
+
+// Lazy load pages
+const Login = lazy(() => import('@/pages/Login'));
+const Home = lazy(() => import('@/pages/Home'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+
+const router = createBrowserRouter([
+  {
+    element: <PublicRoute />,
+    children: [
+      { path: '/', element: <Login /> },
+      { path: '/login', element: <Login /> },
+    ],
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      { path: '/dashboard', element: <Home /> },
+    ],
+  },
+  { path: '*', element: <NotFound /> },
+]);
+
+export default function Navigation() {
+  return (
+    <Suspense fallback={<Loader />}>
+      <RouterProvider router={router} />
+    </Suspense>
+  );
+}
+```
+
+## Route Protection
+
+### ProtectedRoute Component
+```javascript
+// src/navigation/ProtectedRoute.jsx
+import { Outlet, Navigate } from 'react-router-dom';
+import { useAppSelector } from '@/redux';
+
+const ProtectedRoute = () => {
+  const { userSession } = useAppSelector((state) => state.session);
+
+  if (!userSession) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+};
+```
+
+### PublicRoute Component
+```javascript
+// src/navigation/PublicRoute.jsx
+import { Outlet, Navigate } from 'react-router-dom';
+import { useAppSelector } from '@/redux';
+
+const PublicRoute = () => {
+  const { userSession } = useAppSelector((state) => state.session);
+
+  // Redirect authenticated users away from public routes
+  if (userSession) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+};
+```
+
+## Lazy Loading
+
+### Page Import Pattern
+```javascript
+// Always use lazy loading
+const PageName = lazy(() => import('@/pages/PageName'));
+
+// NOT:
+// import PageName from '@/pages/PageName';
+```
+
+### Suspense Wrapper
+- Wrap `RouterProvider` in `Suspense`
+- Use `Loader` component as fallback
+- Ensures smooth loading experience
+
+## Navigation in Components
+
+### Programmatic Navigation
+```javascript
+import { useNavigate } from 'react-router-dom';
+
+const Component = () => {
+  const navigate = useNavigate();
+
+  const handleAction = () => {
+    navigate('/dashboard', { replace: true });
+  };
+
+  // Replace history
+  navigate('/path', { replace: true });
+  
+  // Add to history
+  navigate('/path');
+  
+  // Go back
+  navigate(-1);
+};
+```
+
+### Link Navigation
+```javascript
+import { Link } from 'react-router-dom';
+
+<Link to="/dashboard" className="...">
+  Go to Dashboard
+</Link>
+```
+
+## Route Parameters
+
+### Dynamic Routes
+```javascript
+// In router
+{ path: '/user/:id', element: <UserProfile /> }
+
+// In component
+import { useParams } from 'react-router-dom';
+
+const UserProfile = () => {
+  const { id } = useParams();
+  // Use id
+};
+```
+
+### Query Parameters
+```javascript
+import { useSearchParams } from 'react-router-dom';
+
+const Component = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const page = searchParams.get('page');
+  
+  setSearchParams({ page: '2' });
+};
+```
+
+## Nested Routes
+
+### Nested Route Structure
+```javascript
+{
+  element: <ProtectedRoute />,
+  children: [
+    {
+      path: '/admin',
+      element: <AdminLayout />,
+      children: [
+        { path: 'dashboard', element: <AdminDashboard /> },
+        { path: 'users', element: <AdminUsers /> },
+      ],
+    },
+  ],
+}
+```
+
+## Route Organization
+
+### Route Groups
+- Group public routes under `PublicRoute`
+- Group protected routes under `ProtectedRoute`
+- Group admin routes under `AdminRoute` (if implemented)
+- Use catch-all route (`*`) for 404 page
+
+## Best Practices
+
+### DO
+- Always lazy load pages
+- Use route protection for authenticated routes
+- Use `replace: true` for redirects to avoid back button issues
+- Handle 404 with catch-all route
+- Use descriptive route paths
+
+### DON'T
+- Don't import pages directly (always lazy load)
+- Don't forget Suspense wrapper
+- Don't expose protected routes without authentication check
+- Don't use hardcoded URLs (use constants if needed)
+
+## Route Constants (Optional)
+
+### Centralized Routes
+```javascript
+// src/config/routes.js
+export const ROUTES = {
+  LOGIN: '/login',
+  DASHBOARD: '/dashboard',
+  PROFILE: '/profile',
+};
+```

@@ -1,0 +1,226 @@
+# Page Structure Rules
+
+## Core Principles
+- Pages are route-level components
+- Use lazy loading for all pages
+- Wrap protected pages with `DashboardLayout` (if needed)
+- Follow consistent page structure and organization
+
+## Page Structure
+
+### Standard Page Template
+```javascript
+/**
+ * @version 0.0.1
+ * Updated On : [Date]
+ * Page description
+ */
+import { useQuery } from '@tanstack/react-query';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
+import { Loader, InnerLoader } from '@/components';
+import { useAppSelector } from '@/redux';
+import { API } from '@/services';
+
+const PageName = () => {
+  //-------------- State & Variables --------------//
+  const { userSession } = useAppSelector((state) => state.session);
+  
+  //-------------- API Calls --------------//
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['key'],
+    queryFn: () => API.FunctionName({}, false, false),
+  });
+  
+  //-------------- Event Handlers --------------//
+  const handleAction = () => {
+    // Handler logic
+  };
+  
+  //-------------- Render --------------//
+  return (
+    <DashboardLayout>
+      <div className="min-h-screen bg-background p-8 relative w-full">
+        {/* Page content */}
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default PageName;
+```
+
+## Page Layout
+
+### With Dashboard Layout
+```javascript
+import DashboardLayout from '@/components/Layout/DashboardLayout';
+
+const Page = () => {
+  return (
+    <DashboardLayout>
+      <div className="min-h-screen bg-background p-8 relative w-full">
+        {/* Content */}
+      </div>
+    </DashboardLayout>
+  );
+};
+```
+
+### Without Layout (Public Pages)
+```javascript
+const LoginPage = () => {
+  return (
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
+      {/* Content */}
+    </div>
+  );
+};
+```
+
+## Page Header Pattern
+
+### Standard Header
+```javascript
+<div className="mb-8 flex items-center justify-between">
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight">Page Title</h1>
+    <p className="mt-2 text-muted-foreground">
+      Page description or subtitle
+    </p>
+  </div>
+  {/* Action buttons */}
+</div>
+```
+
+## Data Loading
+
+### Loading States
+```javascript
+const { data, isLoading, isError, error } = useQuery({
+  queryKey: ['data'],
+  queryFn: () => API.GetData(),
+});
+
+// Full page loader
+if (isLoading) {
+  return (
+    <DashboardLayout>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader />
+      </div>
+    </DashboardLayout>
+  );
+}
+
+// Inline loader
+{isLoading && (
+  <div className="flex items-center justify-center py-8">
+    <InnerLoader />
+  </div>
+)}
+```
+
+### Error States
+```javascript
+{isError && (
+  <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
+    Error: {error?.message || 'Failed to load data'}
+  </div>
+)}
+```
+
+## Page Content Sections
+
+### Card Sections
+```javascript
+<div className="rounded-lg border bg-card p-6 shadow-sm mb-6">
+  <h2 className="mb-4 text-xl font-semibold">Section Title</h2>
+  {/* Section content */}
+</div>
+```
+
+### Multiple Sections
+```javascript
+<div className="space-y-6">
+  <div className="rounded-lg border bg-card p-6 shadow-sm">
+    {/* Section 1 */}
+  </div>
+  <div className="rounded-lg border bg-card p-6 shadow-sm">
+    {/* Section 2 */}
+  </div>
+</div>
+```
+
+## Page Organization
+
+### File Structure
+```
+pages/
+  PageName/
+    index.jsx          # Main page component
+    components/        # Page-specific components (optional)
+      Component1.jsx
+      Component2.jsx
+```
+
+### Component Extraction
+- Extract reusable components to `src/components/`
+- Extract page-specific components to `pages/PageName/components/`
+- Keep page files focused and readable
+
+## Lazy Loading
+
+### Page Import
+```javascript
+// In navigation/index.jsx
+const PageName = lazy(() => import('@/pages/PageName'));
+
+// Page must have default export
+export default PageName;
+```
+
+## Page Types
+
+### Protected Pages
+- Require authentication
+- Use `DashboardLayout`
+- Access user session from Redux
+
+### Public Pages
+- No authentication required
+- Custom layout (usually centered)
+- Examples: Login, Signup, NotFound
+
+## Best Practices
+
+### DO
+- Use consistent page structure
+- Handle loading and error states
+- Use DashboardLayout for protected pages
+- Extract complex logic into hooks
+- Keep pages focused and readable
+
+### DON'T
+- Don't put business logic directly in pages
+- Don't forget loading states
+- Don't skip error handling
+- Don't create deeply nested components in page files
+
+## Page Styling
+
+### Container Classes
+```javascript
+// Main container
+className="min-h-screen bg-background p-8 relative w-full"
+
+// Centered container (public pages)
+className="bg-background flex min-h-screen items-center justify-center p-4"
+
+// Content wrapper
+className="max-w-7xl mx-auto"
+```
+
+### Spacing
+- Use `p-8` for main page padding
+- Use `mb-6` or `mb-8` for section spacing
+- Use `space-y-6` for vertical spacing between elements

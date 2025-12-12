@@ -1,0 +1,88 @@
+# API Call Rules
+
+## Core Principles
+- All API calls MUST use the centralized `responseHandler` from `@/services/core`
+- Use TanStack Query (`@tanstack/react-query`) for data fetching and mutations
+- NEVER make direct axios calls in components - always use the `API` object from `@/services`
+
+## API Service Structure
+
+### Creating API Functions
+```javascript
+// In src/services/apis/[feature]/index.js
+import { axiosApi, responseHandler } from '@/services/core';
+
+export const FeatureApi = {
+  /**
+   * Function description
+   * @param data - Parameter description
+   * @param toast_success - Success message (optional, default: false)
+   * @param toast_loading - Loading message (optional, default: false)
+   * @returns JSON response or null
+   */
+  FunctionName: (data, toast_success = false, toast_loading = false) => {
+    const api_call = axiosApi.post('/endpoint', data);
+    return responseHandler(api_call, toast_success, toast_loading);
+  }
+};
+```
+
+### Exporting APIs
+- All API functions MUST be exported through `src/services/index.js` as `API`
+- Use object spread to combine multiple API modules: `export const API = { ...AuthApi, ...UserApis }`
+- Import in components as: `import { API } from '@/services'`
+
+## Using APIs in Components
+
+### With TanStack Query (Queries)
+```javascript
+import { useQuery } from '@tanstack/react-query';
+import { API } from '@/services';
+
+const { data, isLoading, isError, error } = useQuery({
+  queryKey: ['unique-key'],
+  queryFn: () => API.FunctionName({}, false, false), // No toasts for queries
+  staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  select: (data) => data?.data || data // Transform response if needed
+});
+```
+
+### With TanStack Query (Mutations)
+```javascript
+import { useMutation } from '@tanstack/react-query';
+import { API } from '@/services';
+import { useErrorLog } from '@/hooks';
+
+const handleError = useErrorLog('pages/ComponentName');
+
+const mutation = useMutation({
+  mutationFn: (data) => API.FunctionName(data, 'Success message!', 'Loading...'),
+  onSuccess: (response) => {
+    // Handle success
+  },
+  onError: (error) => {
+    handleError(error);
+    // Handle error
+  }
+});
+```
+
+## Authentication
+- Use `axiosApi` for authenticated requests (automatically includes Bearer token)
+- Use `publicAxios` for public endpoints (login, signup, etc.)
+- Token refresh is handled automatically by interceptors in `core.js`
+
+## Error Handling
+- The `responseHandler` automatically handles errors and shows toast notifications
+- For custom error handling, use `useErrorLog` hook: `const handleError = useErrorLog('file/path')`
+- Always handle errors in mutation `onError` callbacks
+
+## Response Format
+- API functions return `response.data` on success (status 200/201)
+- Returns `null` on error
+- Always check for null before using response data
+
+## Toast Notifications
+- Use toast messages for user feedback: `toast_success` and `toast_loading`
+- Set to `false` to disable toasts (common for queries)
+- Toast messages are handled by `sonner` via `responseHandler`

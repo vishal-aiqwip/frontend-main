@@ -1,0 +1,228 @@
+# Redux Rules
+
+## Core Principles
+- Use Redux Toolkit (`@reduxjs/toolkit`) for state management
+- Use typed hooks: `useAppSelector` and `useAppDispatch`
+- Create slices with `createSlice`
+- Export actions from reducer files
+
+## Store Setup
+
+### Store Configuration
+```javascript
+// src/redux/store/index.ts
+import { configureStore } from '@reduxjs/toolkit';
+import rootReducer from '../reducer';
+
+export const store = configureStore({
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
+});
+
+export const persistor = persistStore(store);
+```
+
+### Root Reducer
+```javascript
+// src/redux/reducer/index.js
+import { combineReducers } from '@reduxjs/toolkit';
+import sessionReducer from './sessionReducer';
+
+export default combineReducers({
+  session: sessionReducer,
+  // Add more reducers here
+});
+```
+
+## Creating Slices
+
+### Slice Pattern
+```javascript
+// src/redux/reducer/sessionReducer.js
+import { createSlice } from '@reduxjs/toolkit';
+
+const initialState = {
+  userSession: null,
+  isLoading: false,
+};
+
+const sessionSlice = createSlice({
+  name: 'session',
+  initialState,
+  reducers: {
+    loadingStart: (state, action) => {
+      state.isLoading = action.payload || 'screen';
+    },
+    loadingStop: (state) => {
+      state.isLoading = false;
+    },
+    login: (state, action) => {
+      state.userSession = action.payload;
+    },
+    logout: (state) => {
+      state.userSession = null;
+      state.isLoading = false;
+    },
+  },
+});
+
+export const { loadingStart, loadingStop, login, logout } = sessionSlice.actions;
+export default sessionSlice.reducer;
+```
+
+## Typed Hooks
+
+### Using Hooks
+```javascript
+// Import from @/redux
+import { useAppSelector, useAppDispatch } from '@/redux';
+
+const Component = () => {
+  const dispatch = useAppDispatch();
+  const { userSession, isLoading } = useAppSelector((state) => state.session);
+  
+  // Use dispatch and state
+};
+```
+
+### Hook Definitions
+```javascript
+// src/redux/hooks.js
+import { useDispatch, useSelector } from 'react-redux';
+
+export const useAppDispatch = useDispatch;
+export const useAppSelector = useSelector;
+```
+
+## Actions
+
+### Action Creators
+- Actions are automatically created by `createSlice`
+- Export actions from reducer file
+- Re-export from actions file for consistency
+
+```javascript
+// src/redux/actions/sessionActions.js
+export { loadingStart, loadingStop, login, logout } from '../reducer/sessionReducer';
+```
+
+### Dispatching Actions
+```javascript
+import { useAppDispatch } from '@/redux';
+import { login, logout } from '@/redux';
+
+const dispatch = useAppDispatch();
+
+// Dispatch action
+dispatch(login(userData));
+dispatch(logout());
+```
+
+## State Access Patterns
+
+### Selecting State
+```javascript
+// Single value
+const userSession = useAppSelector((state) => state.session.userSession);
+
+// Multiple values
+const { userSession, isLoading } = useAppSelector((state) => state.session);
+
+// Computed values
+const isAuthenticated = useAppSelector((state) => !!state.session.userSession);
+```
+
+### Memoized Selectors (Optional)
+```javascript
+// For complex selections, use useMemo
+const userData = useAppSelector((state) => state.session.userSession);
+const processedData = useMemo(() => {
+  // Process userData
+  return processed;
+}, [userData]);
+```
+
+## Reducer Rules
+
+### Immer (Automatic)
+- Redux Toolkit uses Immer automatically
+- Write "mutating" logic in reducers (it's safe)
+- Immer creates immutable updates
+
+```javascript
+// ✅ Correct - Immer handles immutability
+login: (state, action) => {
+  state.userSession = action.payload;
+}
+
+// ❌ Don't do this - unnecessary
+login: (state, action) => {
+  return { ...state, userSession: action.payload };
+}
+```
+
+### Action Payloads
+```javascript
+// Simple payload
+login: (state, action) => {
+  state.userSession = action.payload;
+}
+
+// Conditional logic
+loadingStart: (state, action) => {
+  state.isLoading = action.payload || 'screen';
+}
+```
+
+## Best Practices
+
+### DO
+- Use `createSlice` for all reducers
+- Export actions from reducer files
+- Use typed hooks (`useAppSelector`, `useAppDispatch`)
+- Keep reducers pure (no side effects)
+- Use Immer's "mutating" syntax
+
+### DON'T
+- Don't mutate state directly (outside Immer)
+- Don't put async logic in reducers
+- Don't create action creators manually (use createSlice)
+- Don't access store directly (use hooks)
+
+## Async Actions
+
+### With TanStack Query
+- Use TanStack Query for async data fetching
+- Use Redux for synchronous state management
+- Dispatch Redux actions after successful API calls
+
+```javascript
+const mutation = useMutation({
+  mutationFn: (data) => API.Login(data),
+  onSuccess: (response) => {
+    dispatch(login(response.data));
+  }
+});
+```
+
+## State Structure
+
+### Organize by Feature
+```javascript
+// Each feature has its own slice
+{
+  session: { ... },
+  users: { ... },
+  settings: { ... }
+}
+```
+
+### Naming Conventions
+- Slice name: `featureNameSlice` or `featureReducer`
+- Action names: `verbNoun` (e.g., `login`, `updateUser`)
+- State properties: camelCase

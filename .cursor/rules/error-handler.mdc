@@ -1,0 +1,182 @@
+# Error Handling Rules
+
+## Core Principles
+- Use `ErrorBoundary` for React error boundaries
+- Use `useErrorLog` hook for component-level error logging
+- Use `logger` utility for all logging (never use console directly)
+- Handle errors gracefully with user-friendly messages
+
+## Error Boundary
+
+### Implementation
+- Wrap app in `ErrorBoundary` component (already in `App.jsx`)
+- ErrorBoundary catches React component errors
+- Displays user-friendly error UI
+- Logs errors using `logger.error()`
+
+### ErrorBoundary Usage
+```javascript
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+<ErrorBoundary>
+  <YourComponent />
+</ErrorBoundary>
+```
+
+## useErrorLog Hook
+
+### Usage Pattern
+```javascript
+import { useErrorLog } from '@/hooks';
+
+const Component = () => {
+  const handleError = useErrorLog('pages/ComponentName');
+  
+  const handleAction = async () => {
+    try {
+      // Action
+    } catch (error) {
+      handleError(error);
+      // Additional error handling
+    }
+  };
+};
+```
+
+### Error Log Format
+- Automatically includes: Date, File location, Error message, Stack trace
+- Logs to console in development only
+- Can be extended to send to error tracking service in production
+
+## Logger Utility
+
+### Import and Usage
+```javascript
+import { logger } from '@/lib/logger';
+
+// Log levels
+logger.log('Info message');
+logger.warn('Warning message');
+logger.error('Error message', error);
+logger.debug('Debug message');
+logger.info('Info message');
+```
+
+### Logger Rules
+- NEVER use `console.log`, `console.error`, etc. directly
+- Always use `logger` utility
+- Logger only logs in development mode
+- Production logs can be extended to send to error tracking service
+
+## API Error Handling
+
+### With TanStack Query
+```javascript
+import { useMutation } from '@tanstack/react-query';
+import { useErrorLog } from '@/hooks';
+
+const handleError = useErrorLog('pages/ComponentName');
+
+const mutation = useMutation({
+  mutationFn: (data) => API.FunctionName(data),
+  onError: (error) => {
+    handleError(error);
+    // Show user-friendly error message
+    form.setError('root', {
+      message: 'An error occurred. Please try again.'
+    });
+  }
+});
+```
+
+### With responseHandler
+- `responseHandler` in `core.js` automatically handles API errors
+- Shows toast notifications for errors
+- Returns `null` on error
+- Always check for null before using response
+
+## Form Error Handling
+
+### React Hook Form Errors
+```javascript
+import { useForm } from 'react-hook-form';
+
+const form = useForm();
+
+// Set root error
+form.setError('root', {
+  message: 'Invalid credentials'
+});
+
+// Display root error
+{form.formState.errors.root && (
+  <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+    {form.formState.errors.root.message}
+  </div>
+)}
+
+// Field errors are automatically displayed via FormMessage
+```
+
+## User-Friendly Error Messages
+
+### Error Message Guidelines
+- Never expose technical error details to users
+- Use generic messages: "An error occurred. Please try again."
+- Provide actionable guidance when possible
+- Use toast notifications for transient errors
+- Use inline errors for form validation
+
+### Error UI Patterns
+```javascript
+// Toast notification (automatic via responseHandler)
+// Shows: "Error 400: [message]" or "Error 500: [message]"
+
+// Inline error
+<div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+  {errorMessage}
+</div>
+
+// Error state in UI
+{isError && (
+  <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
+    Error: {error?.message || 'Failed to load data'}
+  </div>
+)}
+```
+
+## Error Recovery
+
+### Retry Logic
+- TanStack Query has built-in retry (configured in QueryClient)
+- Default retry: 1 attempt
+- Can configure per query/mutation
+
+### Fallback UI
+```javascript
+{isError ? (
+  <div className="error-ui">
+    <p>Something went wrong</p>
+    <Button onClick={() => refetch()}>Retry</Button>
+  </div>
+) : (
+  <div>Content</div>
+)}
+```
+
+## Production Error Tracking
+
+### Future Implementation
+- Integrate error tracking service (Sentry, etc.)
+- Send errors from `logger.error()` to tracking service
+- Include context: user info, route, component stack
+- Filter sensitive information before sending
+
+### Current TODO
+```javascript
+// In logger.js
+// TODO: In production, send to error tracking service (e.g., Sentry)
+// if (errorTrackingService) {
+//   errorTrackingService.captureException(...args);
+// }
+```

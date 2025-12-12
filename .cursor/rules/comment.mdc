@@ -1,0 +1,130 @@
+# Code Commenting Rules
+
+## Documentation Comments
+
+### File Header Comments
+Every file MUST start with a JSDoc-style header comment:
+
+```javascript
+/**
+ * @version 0.0.1
+ * Updated On : [Date]
+ * Brief description of the file's purpose
+ */
+```
+
+### Function Documentation
+Document all exported functions and complex functions:
+
+```javascript
+/**
+ * Function description
+ * @param {Type} paramName - Parameter description
+ * @param {Type} paramName2 - Parameter description (optional)
+ * @returns {Type} Return value description
+ */
+export const functionName = (paramName, paramName2 = defaultValue) => {
+  // Implementation
+};
+```
+
+### API Function Documentation
+API functions MUST include detailed JSDoc:
+
+```javascript
+/**
+ * Login API
+ * @param data - Login credentials
+ * @param toast_success - Success message if provided. Default value false.
+ * @param toast_loading - Loading message if provided. Default value false.
+ * @returns JSON response or null.
+ */
+Login: (data, toast_success = false, toast_loading = false) => {
+  // Implementation
+}
+```
+
+## Inline Comments
+
+### Section Dividers
+Use clear section dividers for code organization:
+
+```javascript
+//-------------------Section Title-------------------//
+
+//-------------- State & Variables --------------//
+
+//----------------- API Calls --------------//
+
+//-------------- Event Handlers --------------//
+```
+
+### Complex Logic
+Add comments for non-obvious logic:
+
+```javascript
+// Handle concurrent refresh attempts
+if (isRefreshing) {
+  // Queue the request to retry after token refresh
+  return new Promise((resolve, reject) => {
+    failedQueue.push({ resolve, reject });
+  });
+}
+```
+
+### TODO Comments
+Use TODO comments for future improvements:
+
+```javascript
+// TODO: In production, send to error tracking service (e.g., Sentry)
+// if (errorTrackingService) {
+//   errorTrackingService.captureException(...args);
+// }
+```
+
+## Comment Guidelines
+
+### DO Comment
+- File purposes and responsibilities
+- Complex algorithms or business logic
+- API endpoints and their parameters
+- Non-obvious code decisions
+- Workarounds or temporary solutions
+- Public APIs and exported functions
+
+### DON'T Comment
+- Self-explanatory code
+- Obvious variable names
+- Simple getters/setters
+- Standard React patterns (unless non-standard)
+
+## Version Tracking
+- Update `@version` when making significant changes
+- Update `Updated On` date when modifying files
+- Use semantic versioning: `0.0.1`, `0.0.2`, etc.
+
+## Code Organization Comments
+Use section comments to organize component code:
+
+```javascript
+const Component = () => {
+  //-------------- State & Variables --------------//
+  const [state, setState] = useState();
+  
+  //-------------- Hooks --------------//
+  const dispatch = useAppDispatch();
+  
+  //-------------- Effects --------------//
+  useEffect(() => {
+    // Effect logic
+  }, []);
+  
+  //-------------- Event Handlers --------------//
+  const handleClick = () => {
+    // Handler logic
+  };
+  
+  //-------------- Render --------------//
+  return <div>...</div>;
+};
+```

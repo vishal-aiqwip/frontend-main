@@ -1,0 +1,200 @@
+# Multi-Select Component Rules
+
+## Core Principles
+- Use `MultiSelectDropdown` component from `@/components/multi-select`
+- Follow shadcn/ui patterns with Popover, Command, and Badge
+- Support loading states with `isPending` prop
+- Use controlled component pattern with `value` and `onValueChange`
+
+## Component Usage
+
+### Basic Usage
+```javascript
+import { MultiSelectDropdown } from '@/components/multi-select';
+import { useState } from 'react';
+
+const Component = () => {
+  const [selectedValues, setSelectedValues] = useState([]);
+  
+  const items = [
+    { label: 'Option 1', value: 'opt1' },
+    { label: 'Option 2', value: 'opt2' },
+    { label: 'Option 3', value: 'opt3' }
+  ];
+
+  return (
+    <MultiSelectDropdown
+      value={selectedValues}
+      onValueChange={setSelectedValues}
+      items={items}
+      placeholder="Select options"
+    />
+  );
+};
+```
+
+## Props Interface
+
+### Required Props
+- `value`: Array of selected values (string[])
+- `onValueChange`: Callback function `(values: string[]) => void`
+- `items`: Array of items with `{ label: string, value: string }`
+
+### Optional Props
+- `placeholder`: Placeholder text (default: "Select")
+- `disabled`: Disable the component (default: false)
+- `isPending`: Show loading state (default: false)
+- `className`: Additional CSS classes
+
+## Component Pattern
+
+### Standard Implementation
+```javascript
+export function MultiSelectDropdown({
+  value = [],
+  onValueChange,
+  items = [],
+  placeholder = "Select",
+  disabled = false,
+  isPending = false,
+  className,
+}) {
+  const [open, setOpen] = useState(false);
+
+  const toggle = (val) => {
+    if (value.includes(val)) {
+      onValueChange(value.filter((v) => v !== val));
+    } else {
+      onValueChange([...value, val]);
+    }
+  };
+
+  const selectedItems = items.filter((item) => value.includes(item.value));
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      {/* Implementation */}
+    </Popover>
+  );
+}
+```
+
+## Loading State
+
+### With API Data
+```javascript
+import { useQuery } from '@tanstack/react-query';
+import { MultiSelectDropdown } from '@/components/multi-select';
+
+const { data: items = [], isLoading } = useQuery({
+  queryKey: ['options'],
+  queryFn: () => API.GetOptions()
+});
+
+<MultiSelectDropdown
+  value={selectedValues}
+  onValueChange={setSelectedValues}
+  items={items}
+  isPending={isLoading}
+  placeholder="Select options"
+/>
+```
+
+## Styling
+
+### Custom Styling
+- Use `className` prop for custom styling
+- Follow Tailwind CSS patterns
+- Maintain shadcn/ui design system consistency
+
+### Common Patterns
+```javascript
+<MultiSelectDropdown
+  className="w-full" // Full width
+  // or
+  className="max-w-md" // Constrained width
+/>
+```
+
+## Integration with Forms
+
+### React Hook Form Integration
+```javascript
+import { useForm } from 'react-hook-form';
+import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { MultiSelectDropdown } from '@/components/multi-select';
+
+const form = useForm({
+  defaultValues: {
+    tags: []
+  }
+});
+
+<FormField
+  control={form.control}
+  name="tags"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Tags</FormLabel>
+      <FormControl>
+        <MultiSelectDropdown
+          value={field.value}
+          onValueChange={field.onChange}
+          items={tagOptions}
+          placeholder="Select tags"
+        />
+      </FormControl>
+    </FormItem>
+  )}
+/>
+```
+
+## Data Transformation
+
+### Transforming API Data
+```javascript
+const { data: apiData } = useQuery({
+  queryKey: ['users'],
+  queryFn: () => API.GetUsers()
+});
+
+// Transform to MultiSelectDropdown format
+const items = apiData?.map(user => ({
+  label: `${user.firstName} ${user.lastName}`,
+  value: user.id.toString()
+})) || [];
+
+<MultiSelectDropdown
+  value={selectedUserIds}
+  onValueChange={setSelectedUserIds}
+  items={items}
+/>
+```
+
+## Best Practices
+
+### DO
+- Always provide `items` array with `label` and `value` properties
+- Use controlled component pattern (`value` + `onValueChange`)
+- Handle loading states with `isPending` prop
+- Transform API data to match component format
+- Use meaningful placeholder text
+
+### DON'T
+- Don't mutate the `value` array directly
+- Don't forget to handle empty states
+- Don't use uncontrolled component pattern
+- Don't pass invalid item structures
+
+## Component Structure
+
+### Internal Components
+- Uses `Popover` from shadcn/ui for dropdown
+- Uses `Command` for searchable list
+- Uses `Badge` for selected items display
+- Uses `Check` icon for selected state indicator
+
+### Accessibility
+- Keyboard navigation supported via Command component
+- Screen reader friendly
+- Proper ARIA attributes via shadcn components

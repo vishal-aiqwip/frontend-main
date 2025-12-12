@@ -23,6 +23,7 @@ import { API } from '@/services';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useErrorLog } from '@/hooks';
 
 //-------------------Zod validation Schema-------------------//
 
@@ -42,6 +43,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [showPassword, setShowPassword] = useState(false);
+  const handleError = useErrorLog('pages/Login');
 
   const form = useForm({
     resolver: zodResolver(loginSchema),
@@ -67,6 +69,7 @@ const Login = () => {
         form.setError('root', {
           message: 'Invalid email or password'
         });
+        handleError(error);
       }
     });
 

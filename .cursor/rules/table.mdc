@@ -1,0 +1,321 @@
+# Data Table Rules
+
+## Core Principles
+- Use `@tanstack/react-table` for table functionality
+- Use shadcn `Table` components for UI
+- Support sorting, filtering, pagination, and row selection
+- Use drag-and-drop for row reordering (when needed)
+
+## Table Setup
+
+### Basic Table Structure
+```javascript
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+} from '@tanstack/react-table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+const columns = [
+  {
+    accessorKey: 'name',
+    header: 'Name',
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+  },
+];
+
+function DataTable({ data }) {
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
+
+  return (
+    <Table>
+      <TableHeader>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id}>
+            {headerGroup.headers.map((header) => (
+              <TableHead key={header.id}>
+                {flexRender(header.column.columnDef.header, header.getContext())}
+              </TableHead>
+            ))}
+          </TableRow>
+        ))}
+      </TableHeader>
+      <TableBody>
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => (
+            <TableRow key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={columns.length} className="h-24 text-center">
+              No results.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+}
+```
+
+## Column Definitions
+
+### Column Types
+```javascript
+const columns = [
+  // Basic column
+  {
+    accessorKey: 'name',
+    header: 'Name',
+  },
+  
+  // Custom header
+  {
+    accessorKey: 'status',
+    header: () => <div className="text-right">Status</div>,
+  },
+  
+  // Custom cell
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => (
+      <Badge variant="outline">{row.original.status}</Badge>
+    ),
+  },
+  
+  // Select column
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+      />
+    ),
+  },
+];
+```
+
+## Table Features
+
+### Sorting
+```javascript
+const [sorting, setSorting] = useState([]);
+
+const table = useReactTable({
+  // ...
+  state: { sorting },
+  onSortingChange: setSorting,
+  getSortedRowModel: getSortedRowModel(),
+});
+
+// In column
+{
+  accessorKey: 'name',
+  header: 'Name',
+  enableSorting: true,
+}
+```
+
+### Filtering
+```javascript
+const [columnFilters, setColumnFilters] = useState([]);
+
+const table = useReactTable({
+  // ...
+  state: { columnFilters },
+  onColumnFiltersChange: setColumnFilters,
+  getFilteredRowModel: getFilteredRowModel(),
+});
+```
+
+### Pagination
+```javascript
+const [pagination, setPagination] = useState({
+  pageIndex: 0,
+  pageSize: 10,
+});
+
+const table = useReactTable({
+  // ...
+  state: { pagination },
+  onPaginationChange: setPagination,
+  getPaginationRowModel: getPaginationRowModel(),
+});
+```
+
+### Row Selection
+```javascript
+const [rowSelection, setRowSelection] = useState({});
+
+const table = useReactTable({
+  // ...
+  state: { rowSelection },
+  onRowSelectionChange: setRowSelection,
+  enableRowSelection: true,
+  getRowId: (row) => row.id.toString(),
+});
+```
+
+## Pagination UI
+
+### Pagination Controls
+```javascript
+<div className="flex items-center justify-between">
+  <div className="text-muted-foreground text-sm">
+    {table.getFilteredSelectedRowModel().rows.length} of{' '}
+    {table.getFilteredRowModel().rows.length} row(s) selected.
+  </div>
+  
+  <div className="flex items-center gap-2">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => table.previousPage()}
+      disabled={!table.getCanPreviousPage()}
+    >
+      Previous
+    </Button>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => table.nextPage()}
+      disabled={!table.getCanNextPage()}
+    >
+      Next
+    </Button>
+  </div>
+</div>
+```
+
+## Column Visibility
+
+### Toggle Columns
+```javascript
+const [columnVisibility, setColumnVisibility] = useState({});
+
+const table = useReactTable({
+  // ...
+  state: { columnVisibility },
+  onColumnVisibilityChange: setColumnVisibility,
+});
+
+// In UI
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="outline">Columns</Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    {table
+      .getAllColumns()
+      .filter((column) => column.getCanHide())
+      .map((column) => (
+        <DropdownMenuCheckboxItem
+          key={column.id}
+          checked={column.getIsVisible()}
+          onCheckedChange={(value) => column.toggleVisibility(!!value)}
+        >
+          {column.id}
+        </DropdownMenuCheckboxItem>
+      ))}
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+## Drag and Drop
+
+### Row Reordering
+```javascript
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+
+function DraggableRow({ row }) {
+  const { transform, transition, setNodeRef } = useSortable({
+    id: row.original.id,
+  });
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+    >
+      {/* Cells */}
+    </TableRow>
+  );
+}
+
+<DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+  <SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
+    {table.getRowModel().rows.map((row) => (
+      <DraggableRow key={row.id} row={row} />
+    ))}
+  </SortableContext>
+</DndContext>
+```
+
+## Best Practices
+
+### DO
+- Use TanStack Table for table logic
+- Use shadcn Table components for UI
+- Implement proper loading states
+- Handle empty states
+- Support accessibility (keyboard navigation)
+
+### DON'T
+- Don't create custom table logic (use TanStack Table)
+- Don't forget to handle loading/error states
+- Don't skip pagination for large datasets
+- Don't ignore accessibility
+
+## Data Loading
+
+### With TanStack Query
+```javascript
+const { data, isLoading, isError } = useQuery({
+  queryKey: ['table-data'],
+  queryFn: () => API.GetTableData(),
+});
+
+if (isLoading) return <Loader />;
+if (isError) return <ErrorState />;
+
+return <DataTable data={data} />;
+```
