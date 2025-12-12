@@ -1,15 +1,16 @@
-import './styles/app.css'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import { store, persistor } from './redux';
+
 import { Loader } from './components';
-import Navigation from './navigation';
-import { Wrapper } from './lib/Wrapper';
 import { Toaster } from './components';
 import { ToastConfig } from './config';
+import { Wrapper } from './lib/Wrapper';
 import { ThemeProvider } from './lib/themeProvider';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
+import Navigation from './navigation';
+import { persistor, store } from './redux';
+import './styles/app.css';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,31 +20,31 @@ const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       refetchOnMount: true,
-      refetchOnReconnect: true,
+      refetchOnReconnect: true
     },
     mutations: {
-      retry: 1,
-    },
-  },
+      retry: 1
+    }
+  }
 });
 
 function App() {
   return (
     <Provider store={store}>
       <PersistGate loading={<Loader />} persistor={persistor}>
-      <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <Wrapper>
-          
-          <Navigation />
-          <Toaster {...ToastConfig} />
-          </Wrapper>
-        </ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+            <Wrapper>
+              <ErrorBoundary>
+                <Navigation />
+              </ErrorBoundary>
+              <Toaster {...ToastConfig} />
+            </Wrapper>
+          </ThemeProvider>
         </QueryClientProvider>
-
       </PersistGate>
     </Provider>
-  )
+  );
 }
 
-export default App
+export default App;

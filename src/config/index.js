@@ -1,6 +1,6 @@
 export const CONFIG = {
     API_URL: import.meta.env.VITE_API_URL || 'https://ghostagent-dev.dataripple.ai',
-    IS_DEV: import.meta.env.VITE_NODE_ENV,
+    IS_DEV: import.meta.env.VITE_NODE_ENV === 'dev',
     // Add other config values
   };
 

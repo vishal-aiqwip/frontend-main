@@ -25,9 +25,9 @@ export const logger = {
     }
   },
 
-  /**
-   * Log errors (always logged, can be extended to send to error tracking service)
-   */
+ /**
+ * Log errors (development only, can be extended to send to error tracking service)
+ */
   error: (...args) => {
     if (isDevelopment) {
       console.error(...args);
