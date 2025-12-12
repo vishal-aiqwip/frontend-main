@@ -22,6 +22,7 @@ import { loadingStart, loadingStop, login } from '@/redux';
 import { API } from '@/services';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 
 //-------------------Zod validation Schema-------------------//
 
@@ -50,30 +51,52 @@ const Login = () => {
     }
   });
 
-  //-------------- Submit Event Handler --------------//
-  const onSubmit = async (data) => {
-    try {
-      // dispatch(loadingStart('screen'));
-      const response = await API.Login(data, 'Login successful!', 'Logging in...');
 
-      if (response) {
-        // Save session to localStorage
-        dispatch(login(response?.data));
-        // Redirect to dashboard
+    // ------------------- TanStack Mutation ------------------- //
+    const loginMutation = useMutation({
+      mutationFn: (data) =>
+        API.Login(data, 'Login successful!', 'Logging in...'),
+  
+      onSuccess: (response) => {
+        dispatch(login(response.data));
         navigate('/dashboard', { replace: true });
-      } else {
+        console.log(response);
+      },
+  
+      onError: () => {
         form.setError('root', {
           message: 'Invalid email or password'
         });
-        dispatch(loadingStop());
       }
-    } catch (err) {
-      form.setError('root', {
-        message: 'An error occurred. Please try again.'
-      });
-      dispatch(loadingStop());
-    }
+    });
+
+  //-------------- Submit Event Handler --------------//
+  const onSubmit = (data) => {
+    loginMutation.mutate(data);
   };
+  // const onSubmit = async (data) => {
+  //   try {
+  //     // dispatch(loadingStart('screen'));
+  //     const response = await API.Login(data, 'Login successful!', 'Logging in...');
+
+  //     if (response) {
+  //       // Save session to localStorage
+  //       dispatch(login(response?.data));
+  //       // Redirect to dashboard
+  //       navigate('/dashboard', { replace: true });
+  //     } else {
+  //       form.setError('root', {
+  //         message: 'Invalid email or password'
+  //       });
+  //       dispatch(loadingStop());
+  //     }
+  //   } catch (err) {
+  //     form.setError('root', {
+  //       message: 'An error occurred. Please try again.'
+  //     });
+  //     dispatch(loadingStop());
+  //   }
+  // };
 
   return (
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
