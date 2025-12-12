@@ -2,7 +2,7 @@
 
 /**
  * @version 0.0.1
- * Updated On : 03 Dec, 2025
+ * Updated On : 12 Dec, 2025
  * This is a navigation.
  * It handles all routes with lazy loading
  */
@@ -16,6 +16,8 @@ import PublicRoute from './PublicRoute';
 const Login = lazy(() => import('@/pages/Login'));
 const Home = lazy(() => import('@/pages/Home'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
+const About = lazy(() => import('@/pages/About'));
+
 
 
 const router = createBrowserRouter([
@@ -31,6 +33,7 @@ const router = createBrowserRouter([
     
         children: [
           { path: '/dashboard', element: <Home /> },
+          { path: '/about', element: <About /> },
           // Add more protected routes here
           // {
           //   element: <AdminRoute />,

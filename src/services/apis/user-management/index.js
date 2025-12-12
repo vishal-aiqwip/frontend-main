@@ -1,6 +1,6 @@
 /**
  * @version 0.0.1
- * Updated On : 3 Nov, 2025
+ * Updated On : 12 Dec, 2025
  * This is a collection of User Management APIs.
  * It handles all user-related API routes.
  */

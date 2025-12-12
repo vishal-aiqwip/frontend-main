@@ -32,6 +32,21 @@ import {
 } from "@/components/ui/sidebar"
 import { useAppSelector } from "@/redux"
 
+import {
+  AudioWaveform,
+  BarChart,
+  Command,
+  GalleryVerticalEnd,
+  HelpCircle,
+  Home,
+  PhoneCall,
+  Settings,
+  SquareTerminal,
+  User
+} from "lucide-react"
+
+
+
 const data = {
   user: {
     name: "shadcn",
@@ -40,30 +55,54 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "#",
-      icon: IconDashboard,
+      name: 'Home',
+      url: '/dashboard',
+      icon: Home
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
+      name: 'About ',
+      url: '/about',
+      icon: HelpCircle
+
     },
     {
-      title: "Analytics",
-      url: "#",
-      icon: IconChartBar,
+      name: 'Sales Report',
+      url: '/',
+      icon: BarChart
+
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
+      name: 'Users',
+      url: '/admin/users',
+      icon: User
     },
+
     {
-      title: "Team",
+      title: "Policy Management",
       url: "#",
-      icon: IconUsers,
+      icon: SquareTerminal,
+      items: [
+        {
+          title: "Policies",
+          url: "/admin/policies",
+        },
+        {
+          title: "Prompt",
+          url: "/admin/policy-ocr-prompt",
+        },
+        
+      ],
+    }, {
+      name: 'Settings',
+      url: '/admin/settings',
+      icon: Settings
+    }, {
+      name: 'Help Center',
+      url: '/admin/help-center',
+      icon: HelpCircle,
+
     },
+
   ],
   navClouds: [
     {
@@ -148,6 +187,7 @@ const data = {
     },
   ],
 }
+
 
 export function AppSidebar({
   ...props

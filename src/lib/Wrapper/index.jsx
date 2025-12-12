@@ -18,7 +18,7 @@ import { Loader } from '@/components';
 
 const Wrapper = ({ children }) => {
   //-------------- State & Variables --------------//
-  const handleError = useErrorLog('lib/Wrapper'); // Available for error handling
+  const handleError = useErrorLog('lib/Wrapper'); 
   const dispatch = useAppDispatch();
   const { isLoading, userSession } = useAppSelector((state) => state.session);
 
@@ -61,9 +61,10 @@ const Wrapper = ({ children }) => {
           console.error('Failed to refresh token:', error);
           handleError(error);
         }
-      } else {
-        console.log('Access token is still valid');
-      }
+      } 
+      // else {
+      //   console.log('Access token is still valid');
+      // }
     };
 
     // Only check after Redux state is rehydrated and userSession exists
