@@ -7,7 +7,7 @@
  * @param token - JWT token string
  * @returns Decoded token payload or null
  */
-export const decodeJWT = (token: string): { exp?: number; [key: string]: unknown } | null => {
+export const decodeJWT = (token) => {
   try {
     const base64Url = token.split('.')[1];
     if (!base64Url) return null;
@@ -32,7 +32,7 @@ export const decodeJWT = (token: string): { exp?: number; [key: string]: unknown
  * @param token - JWT token string
  * @returns true if token is expired or invalid, false otherwise
  */
-export const isTokenExpired = (token: string | null): boolean => {
+export const isTokenExpired = (token) => {
   if (!token) return true;
   
   const decoded = decodeJWT(token);

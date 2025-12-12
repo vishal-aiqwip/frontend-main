@@ -7,7 +7,7 @@ import { CONFIG } from '@/config';
  *  Get session data from redux-persist storage
  *  Internal helper function for axios interceptors
  */
-const getPersistedSession = ()=> {
+const getPersistedSession = () => {
   try {
     const persistedState = localStorage.getItem('persist:root');
     if (!persistedState) return null;
@@ -25,7 +25,7 @@ const getPersistedSession = ()=> {
  *  Update access token in redux-persist storage
  *  Note: This directly updates localStorage. For better approach, dispatch Redux action from components.
  */
-export const setAccessToken = (newAccessToken: string): void => {
+export const setAccessToken = (newAccessToken) => {
   try {
     const persistedState = localStorage.getItem('persist:root');
     if (!persistedState) return;
@@ -56,15 +56,15 @@ export const setAccessToken = (newAccessToken: string): void => {
 /**
  *  Get access token from redux-persist storage
  */
-export const getAccessToken = (): string | null => {
+export const getAccessToken = () => {
   try {
     const session = getPersistedSession();
     if (!session) return null;
 
     return (
       session?.token?.access_token ||
-      (session as { access_token?: string }).access_token ||
-      (session as { access?: string }).access ||
+      session?.access_token ||
+      session?.access ||
       null
     );
   } catch {
@@ -75,15 +75,15 @@ export const getAccessToken = (): string | null => {
 /**
  *  Get refresh token from redux-persist storage
  */
-export const getRefreshToken = (): string | null => {
+export const getRefreshToken = () => {
   try {
     const session = getPersistedSession();
     if (!session) return null;
 
     return (
       session?.token?.refresh_token ||
-      (session as { refresh_token?: string }).refresh_token ||
-      (session as { refresh?: string }).refresh ||
+      session?.refresh_token ||
+      session?.refresh ||
       null
     );
   } catch {
@@ -108,7 +108,7 @@ export const publicAxios = axios.create({
  *  Request Interceptor: Attach Access Token
  */
 axiosApi.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  (config) => {
     const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -123,14 +123,9 @@ axiosApi.interceptors.request.use(
  */
 let isRefreshing = false;
 
-interface FailedRequest {
-  resolve: (token: string) => void;
-  reject: (error: unknown) => void;
-}
+let failedQueue = [];
 
-let failedQueue: FailedRequest[] = [];
-
-const processQueue = (error: unknown | null, token: string | null = null): void => {
+const processQueue = (error, token = null) => {
   failedQueue.forEach((prom) => {
     if (error) prom.reject(error);
     else if (token) prom.resolve(token);
@@ -139,8 +134,8 @@ const processQueue = (error: unknown | null, token: string | null = null): void 
 };
 
 axiosApi.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  async (error: { config?: InternalAxiosRequestConfig & { _retry?: boolean }; response?: { status?: number } }) => {
+  (response) => response,
+  async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
 
@@ -158,10 +153,10 @@ axiosApi.interceptors.response.use(
 
       //---- Handle concurrent refresh attempts ----//
       if (isRefreshing) {
-        return new Promise<string>((resolve, reject) => {
+        return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token: string) => {
+          .then((token) => {
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = 'Bearer ' + token;
             }
@@ -175,7 +170,7 @@ axiosApi.interceptors.response.use(
 
       try {
         //------- Attempt refresh--------//
-        const res = await publicAxios.post<{ token?: { access_token?: string }; access?: string; access_token?: string }>('/auth/refresh-token', {
+        const res = await publicAxios.post('/auth/refresh-token', {
           refresh_token: refreshToken
         });
 
@@ -191,11 +186,11 @@ axiosApi.interceptors.response.use(
           originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
         }
         return axiosApi(originalRequest);
-      } catch (err: unknown) {
+      } catch (err) {
         processQueue(err, null);
 
         //--------- If refresh token request also failed (unauthorized)---------//
-        const errStatus = (err as { response?: { status?: number } })?.response?.status;
+        const errStatus = err?.response?.status;
         if (errStatus === 401 || errStatus === 403) {
           toast.error('Session expired. Please log in again.');
           localStorage.removeItem('persist:root');
@@ -217,7 +212,7 @@ axiosApi.interceptors.response.use(
 /**
  *  Ngrok header setup
  */
-const addNgrokHeader = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+const addNgrokHeader = (config) => {
   if (
     (config.baseURL && config.baseURL.includes('ngrok-free.app')) ||
     (config.url && config.url.includes('ngrok-free.app'))
@@ -235,13 +230,13 @@ axiosApi.interceptors.request.use(addNgrokHeader, (error) => Promise.reject(erro
 /**
  *  Unified Response Handler
  */
-export const responseHandler = async <T = unknown>(
-  api_call: Promise<AxiosResponse<T>>,
-  toast_success: string | false = false,
-  toast_loading: string | false = false
-): Promise<T | null> => {
-  let response: AxiosResponse<T> | null = null;
-  let toastId: string | number | null = null;
+export const responseHandler = async (
+  api_call,
+  toast_success = false,
+  toast_loading = false
+) => {
+  let response = null;
+  let toastId = null;
 
   if (toast_loading) toastId = toast.loading(toast_loading);
 
@@ -254,19 +249,13 @@ export const responseHandler = async <T = unknown>(
     } else {
       if (toastId)
         toast.error(
-          `Error ${response.status}: ${(response?.data as { message?: string })?.message || 'Something went wrong'}`,
+          `Error ${response.status}: ${response?.data?.message || 'Something went wrong'}`,
           { id: toastId }
         );
       return null;
     }
-  } catch (error: unknown) {
-    const axiosError = error as {
-      response?: {
-        data?: { detail?: string; message?: string };
-        status?: number;
-      };
-      message?: string;
-    };
+  } catch (error) {
+    const axiosError = error;
 
     const errorMessage =
       axiosError?.response?.data?.detail ||

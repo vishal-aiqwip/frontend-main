@@ -68,7 +68,7 @@ const Login = () => {
         // Save session to localStorage
         // setSession(response?.data as SessionData);
         // Update Redux store
-        dispatch(login(response?.data as SessionData));
+        dispatch(login(response?.data));
         dispatch(loadingStop());
         // Redirect to dashboard
         navigate('/dashboard', { replace: true });

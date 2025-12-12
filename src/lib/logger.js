@@ -1,15 +1,16 @@
-/**
+  /**
  * Logger utility for development and production
  * Replaces console statements with environment-aware logging
  */
+import { CONFIG } from '@/config';
 
-const isDevelopment = import.meta.env.DEV;
+const isDevelopment = CONFIG.IS_DEV;
 
 export const logger = {
   /**
    * Log information (development only)
    */
-  log: (...args: unknown[]): void => {
+  log: (...args) => {
     if (isDevelopment) {
       console.log(...args);
     }
@@ -18,7 +19,7 @@ export const logger = {
   /**
    * Log warnings (development only)
    */
-  warn: (...args: unknown[]): void => {
+  warn: (...args) => {
     if (isDevelopment) {
       console.warn(...args);
     }
@@ -27,7 +28,7 @@ export const logger = {
   /**
    * Log errors (always logged, can be extended to send to error tracking service)
    */
-  error: (...args: unknown[]): void => {
+  error: (...args) => {
     if (isDevelopment) {
       console.error(...args);
     }
@@ -40,7 +41,7 @@ export const logger = {
   /**
    * Debug logs (development only)
    */
-  debug: (...args: unknown[]): void => {
+  debug: (...args) => {
     if (isDevelopment) {
       console.debug(...args);
     }
@@ -49,7 +50,7 @@ export const logger = {
   /**
    * Info logs (development only)
    */
-  info: (...args: unknown[]): void => {
+  info: (...args) => {
     if (isDevelopment) {
       console.info(...args);
     }
