@@ -1,0 +1,508 @@
+# Sheet Component Rules
+
+## Core Principles
+- Use shadcn/ui `Sheet` for slide-out panels
+- Sheet slides in from sides (right, left, top, bottom)
+- Similar to Dialog but better for side panels and mobile navigation
+- Control sheet state with `open` and `onOpenChange` props
+
+## Sheet Component
+
+### Basic Sheet Structure
+```javascript
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+
+const Component = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button>Open Sheet</Button>
+      </SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Sheet Title</SheetTitle>
+          <SheetDescription>
+            Sheet description text
+          </SheetDescription>
+        </SheetHeader>
+        <div>
+          {/* Sheet content */}
+        </div>
+        <SheetFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit}>Submit</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+};
+```
+
+## Sheet Sides
+
+### Side Options
+```javascript
+// Right side (default)
+<SheetContent side="right">
+  {/* Content */}
+</SheetContent>
+
+// Left side
+<SheetContent side="left">
+  {/* Content */}
+</SheetContent>
+
+// Top side
+<SheetContent side="top">
+  {/* Content */}
+</SheetContent>
+
+// Bottom side
+<SheetContent side="bottom">
+  {/* Content */}
+</SheetContent>
+```
+
+### Responsive Side Selection
+```javascript
+import { useIsMobile } from '@/hooks/use-mobile';
+
+const Component = () => {
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button>Open</Button>
+      </SheetTrigger>
+      <SheetContent side={isMobile ? "bottom" : "right"}>
+        {/* Content */}
+      </SheetContent>
+    </Sheet>
+  );
+};
+```
+
+## Sheet with Form
+
+### Form in Sheet
+```javascript
+import { useForm } from 'react-hook-form';
+import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+
+const Component = () => {
+  const [open, setOpen] = useState(false);
+  const form = useForm();
+
+  const onSubmit = (data) => {
+    // Handle form submission
+    setOpen(false);
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button>Add Item</Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>Add New Item</SheetTitle>
+          <SheetDescription>
+            Fill in the details below
+          </SheetDescription>
+        </SheetHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <SheetFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save</Button>
+            </SheetFooter>
+          </form>
+        </Form>
+      </SheetContent>
+    </Sheet>
+  );
+};
+```
+
+## Sheet Sizing
+
+### Custom Width
+```javascript
+// Default: w-3/4 on mobile, sm:max-w-sm on desktop
+<SheetContent side="right">
+  {/* Content */}
+</SheetContent>
+
+// Custom width
+<SheetContent side="right" className="w-full sm:max-w-lg">
+  {/* Content */}
+</SheetContent>
+
+// Full width on mobile
+<SheetContent side="right" className="w-full sm:max-w-md">
+  {/* Content */}
+</SheetContent>
+```
+
+### Height Control
+```javascript
+// Full height (default for left/right)
+<SheetContent side="right" className="h-full">
+  {/* Content */}
+</SheetContent>
+
+// Auto height (for top/bottom)
+<SheetContent side="bottom" className="max-h-[80vh]">
+  {/* Content */}
+</SheetContent>
+```
+
+## Controlled Sheet State
+
+### Programmatic Control
+```javascript
+const [open, setOpen] = useState(false);
+
+// Open sheet
+const handleOpen = () => {
+  setOpen(true);
+};
+
+// Close sheet
+const handleClose = () => {
+  setOpen(false);
+};
+
+// Close after action
+const handleSubmit = async () => {
+  await API.Submit();
+  setOpen(false);
+};
+
+<Sheet open={open} onOpenChange={setOpen}>
+  {/* Content */}
+</Sheet>
+```
+
+## Sheet Patterns
+
+### Sheet with Loading State
+```javascript
+const [open, setOpen] = useState(false);
+const [isSubmitting, setIsSubmitting] = useState(false);
+
+const handleSubmit = async () => {
+  setIsSubmitting(true);
+  try {
+    await API.Submit();
+    setOpen(false);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+<Sheet open={open} onOpenChange={setOpen}>
+  <SheetContent>
+    <SheetHeader>
+      <SheetTitle>Title</SheetTitle>
+    </SheetHeader>
+    {/* Content */}
+    <SheetFooter>
+      <Button
+        variant="outline"
+        onClick={() => setOpen(false)}
+        disabled={isSubmitting}
+      >
+        Cancel
+      </Button>
+      <Button onClick={handleSubmit} disabled={isSubmitting}>
+        {isSubmitting ? 'Submitting...' : 'Submit'}
+      </Button>
+    </SheetFooter>
+  </SheetContent>
+</Sheet>
+```
+
+### Sheet with Data Fetching
+```javascript
+import { useQuery } from '@tanstack/react-query';
+
+const Component = ({ itemId, open, onOpenChange }) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ['item', itemId],
+    queryFn: () => API.GetItem(itemId),
+    enabled: open && !!itemId, // Only fetch when sheet is open
+  });
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-lg">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader />
+          </div>
+        ) : (
+          <>
+            <SheetHeader>
+              <SheetTitle>{data?.title}</SheetTitle>
+            </SheetHeader>
+            {/* Content */}
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+};
+```
+
+### Sheet with Scrollable Content
+```javascript
+<Sheet open={open} onOpenChange={setOpen}>
+  <SheetContent side="right" className="flex flex-col">
+    <SheetHeader>
+      <SheetTitle>Title</SheetTitle>
+      <SheetDescription>Description</SheetDescription>
+    </SheetHeader>
+    <div className="flex-1 overflow-y-auto px-4">
+      {/* Scrollable content */}
+    </div>
+    <SheetFooter>
+      <Button onClick={handleSubmit}>Submit</Button>
+    </SheetFooter>
+  </SheetContent>
+</Sheet>
+```
+
+## Sheet vs Dialog vs Drawer
+
+### When to Use Sheet
+- Side navigation panels
+- Settings panels
+- Filters and search panels
+- Mobile-friendly side menus
+- When you want slide-in animation from sides
+
+### When to Use Dialog
+- Modal dialogs (centered)
+- Confirmation dialogs
+- Forms that need focus
+- Important alerts
+
+### When to Use Drawer
+- Mobile-first experiences
+- Bottom sheets on mobile
+- Responsive panels (bottom on mobile, side on desktop)
+
+## Best Practices
+
+### DO
+- Use `Sheet` for side panels and navigation
+- Control sheet state explicitly with `open` and `onOpenChange`
+- Use `asChild` prop with `SheetTrigger`
+- Make sheets responsive (different sides for mobile/desktop)
+- Handle loading states in sheets
+- Close sheets after successful actions
+- Use appropriate side based on context (right for details, left for navigation)
+
+### DON'T
+- Don't use uncontrolled sheets (always use `open` state)
+- Don't forget to handle form submission in sheets
+- Don't use sheets for simple tooltips (use Tooltip instead)
+- Don't nest sheets
+- Don't forget to reset form state when closing sheet
+- Don't use sheets for critical confirmations (use AlertDialog)
+
+## Accessibility
+
+### ARIA Attributes
+- Sheets automatically handle focus management
+- Use `SheetTitle` and `SheetDescription` for proper labeling
+- Use `SheetClose` for close actions
+- Ensure keyboard navigation works (ESC to close)
+
+### Screen Reader Support
+```javascript
+<Sheet>
+  <SheetContent>
+    <SheetHeader>
+      <SheetTitle>Accessible Title</SheetTitle>
+      <SheetDescription>
+        Screen reader will announce this description
+      </SheetDescription>
+    </SheetHeader>
+  </SheetContent>
+</Sheet>
+```
+
+## Common Use Cases
+
+### Navigation Sheet
+```javascript
+const Component = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-64">
+        <SheetHeader>
+          <SheetTitle>Navigation</SheetTitle>
+        </SheetHeader>
+        <nav className="mt-4 space-y-2">
+          <Link to="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
+          <Link to="/settings" onClick={() => setOpen(false)}>Settings</Link>
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
+};
+```
+
+### Filter Sheet
+```javascript
+const Component = () => {
+  const [open, setOpen] = useState(false);
+  const [filters, setFilters] = useState({});
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="outline">
+          <Filter className="mr-2 h-4 w-4" />
+          Filters
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Filters</SheetTitle>
+          <SheetDescription>
+            Apply filters to refine your results
+          </SheetDescription>
+        </SheetHeader>
+        <div className="mt-4 space-y-4">
+          {/* Filter form fields */}
+        </div>
+        <SheetFooter>
+          <Button variant="outline" onClick={() => setFilters({})}>
+            Clear
+          </Button>
+          <Button onClick={() => setOpen(false)}>Apply</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+};
+```
+
+### Details Sheet
+```javascript
+const Component = ({ item }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="link">View Details</Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>{item.name}</SheetTitle>
+          <SheetDescription>{item.description}</SheetDescription>
+        </SheetHeader>
+        <div className="mt-4 space-y-4">
+          {/* Item details */}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+```
+
+## Sheet Footer Patterns
+
+### Standard Footer
+```javascript
+<SheetFooter>
+  <Button variant="outline" onClick={() => setOpen(false)}>
+    Cancel
+  </Button>
+  <Button onClick={handleSubmit}>Submit</Button>
+</SheetFooter>
+```
+
+### Footer with Multiple Actions
+```javascript
+<SheetFooter className="flex-col-reverse sm:flex-row sm:justify-between">
+  <Button variant="destructive" onClick={handleDelete}>
+    Delete
+  </Button>
+  <div className="flex gap-2">
+    <Button variant="outline" onClick={() => setOpen(false)}>
+      Cancel
+    </Button>
+    <Button onClick={handleSave}>Save</Button>
+  </div>
+</SheetFooter>
+```
+
+## Mobile Considerations
+
+### Responsive Behavior
+- Sheets work well on mobile
+- Consider using `bottom` side on mobile for better UX
+- Use `useIsMobile` hook to adjust side dynamically
+- Ensure content is scrollable on small screens
+
+### Mobile Pattern
+```javascript
+import { useIsMobile } from '@/hooks/use-mobile';
+
+const Component = () => {
+  const isMobile = useIsMobile();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button>Open</Button>
+      </SheetTrigger>
+      <SheetContent side={isMobile ? "bottom" : "right"}>
+        {/* Content */}
+      </SheetContent>
+    </Sheet>
+  );
+};
+```

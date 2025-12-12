@@ -40,13 +40,22 @@ components/
 ```
 pages/
 ├── Home/
-│   └── index.jsx
+│   ├── index.jsx
+│   └── components/     # Page-specific components 
+│       └── HomeCard.jsx
 ├── Login/
 │   ├── index.jsx
-│   └── components/     # Page-specific components
+│   └── components/     # Page-specific components 
+│       └── LoginForm.jsx
 └── NotFound/
     └── index.jsx
 ```
+
+### Page Structure Pattern
+- Each page can have its own `components/` folder for page-specific components
+- Page-specific components are only used within that page
+- Reusable components should be in `src/components/` instead
+- Use `components/` folder when a component is tightly coupled to the page
 
 ### Redux (`src/redux/`)
 ```
